@@ -176,8 +176,9 @@ export default function CustomsDashboard() {
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Theme state
+  // Theme state & client mount flag
   const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const reportRef = useRef<HTMLDivElement>(null);
   const statsAbortRef = useRef<AbortController | null>(null);
@@ -343,8 +344,9 @@ export default function CustomsDashboard() {
     setTimeout(() => setCopiedTaxId(null), 1800);
   };
 
-  // Initialize theme from storage or system preference
+  // Initialize theme from storage or system preference and mark client mounted
   useEffect(() => {
+    setMounted(true);
     const savedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
@@ -414,27 +416,25 @@ export default function CustomsDashboard() {
     }
   };
 
-  // Filtered & Sorted Enterprises
+  // Filtered & Sorted Enterprises (Hoisted query & optimized sort)
   const filteredEnterprises = useMemo(() => {
     const listSource = stats?.enterprises || stats?.topEnterprises || [];
     if (!listSource || listSource.length === 0) return [];
-    let list = listSource.filter((ent: any) => {
-      const q = searchQuery.toLowerCase().trim();
-      if (!q) return true;
-      return (
-        (ent.name && ent.name.toLowerCase().includes(q)) ||
-        (ent.taxId && ent.taxId.includes(q))
-      );
-    });
+    const q = searchQuery.toLowerCase().trim();
+    const list = q
+      ? listSource.filter(
+          (ent: any) =>
+            (ent.name && ent.name.toLowerCase().includes(q)) ||
+            (ent.taxId && ent.taxId.includes(q))
+        )
+      : [...listSource];
 
-    list = [...list].sort((a: any, b: any) => {
+    return list.sort((a: any, b: any) => {
       const factor = sortOrder === "desc" ? -1 : 1;
       const valA = Number(a[sortField]) || 0;
       const valB = Number(b[sortField]) || 0;
       return (valA - valB) * factor;
     });
-
-    return list;
   }, [stats, searchQuery, sortField, sortOrder]);
 
   const navItems = [
@@ -858,7 +858,9 @@ export default function CustomsDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="h-72 sm:h-80 px-2 pb-3">
-                {stats?.trends && stats.trends.length > 0 ? (
+                {!mounted ? (
+                  <div className="h-full w-full bg-slate-50/50 dark:bg-slate-800/30 rounded-lg animate-pulse" />
+                ) : stats?.trends && stats.trends.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <ComposedChart data={stats.trends}>
                       <defs>
@@ -955,36 +957,44 @@ export default function CustomsDashboard() {
               </CardHeader>
               <CardContent className="px-4 pb-4 flex flex-col justify-between flex-1">
                 <div className="h-52 relative my-1">
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                    <PieChart>
-                      <Pie
-                        data={taxPieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={58}
-                        outerRadius={78}
-                        paddingAngle={3}
-                        dataKey="value"
-                        isAnimationActive={true}
-                        animationDuration={600}
-                        animationEasing="ease-out"
-                      >
-                        {taxPieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: any) => formatVND(value)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                      Tổng số thu
-                    </span>
-                    <span className="text-sm font-black text-slate-900 dark:text-white block tabular-nums">
-                      {stats?.kpis?.totalTaxVND ? `${(stats.kpis.totalTaxVND / 1e12).toFixed(2)}T` : "0"}
-                    </span>
-                    <span className="text-[9px] text-slate-500 dark:text-slate-400 block">VND</span>
-                  </div>
+                  {!mounted ? (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <div className="size-36 rounded-full border-4 border-slate-100 dark:border-slate-800 animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                        <PieChart>
+                          <Pie
+                            data={taxPieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={58}
+                            outerRadius={78}
+                            paddingAngle={3}
+                            dataKey="value"
+                            isAnimationActive={true}
+                            animationDuration={600}
+                            animationEasing="ease-out"
+                          >
+                            {taxPieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: any) => formatVND(value)} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                          Tổng số thu
+                        </span>
+                        <span className="text-sm font-black text-slate-900 dark:text-white block tabular-nums">
+                          {stats?.kpis?.totalTaxVND ? `${(stats.kpis.totalTaxVND / 1e12).toFixed(2)}T` : "0"}
+                        </span>
+                        <span className="text-[9px] text-slate-500 dark:text-slate-400 block">VND</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* 6-Tax Statutory Micro-Grid Legend with Percentage Indicators */}
@@ -1038,7 +1048,9 @@ export default function CustomsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-72 sm:h-80 px-2 pb-3">
-                {stats?.commodities && stats.commodities.length > 0 ? (
+                {!mounted ? (
+                  <div className="h-full w-full bg-slate-50/50 dark:bg-slate-800/30 rounded-lg animate-pulse" />
+                ) : stats?.commodities && stats.commodities.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <BarChart
                       data={stats.commodities.slice(0, 6)}
@@ -1244,7 +1256,7 @@ export default function CustomsDashboard() {
           </Card>
 
           {/* 5. Interactive Enterprise Rankings Table with Column Sorting */}
-          <Card id="enterprises" className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs page-break-avoid scroll-mt-6">
+          <Card id="enterprises" className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs page-break-avoid scroll-mt-6 [contain:paint_layout]">
             <CardHeader className="pb-3 pt-4 px-5 border-b border-slate-100 dark:border-slate-800">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>

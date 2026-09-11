@@ -42,7 +42,10 @@ export async function GET(request: NextRequest) {
     // If no declarations found in DB, fallback to mock data to keep dashboard active
     if (!kpiRow || kpiRow.totalDeclarations === 0) {
       console.log('No data found in SQL Server, falling back to mock data');
-      return NextResponse.json({ ...getMockStats(startDateStr, endDateStr, loaiXNK), isMock: true });
+      return NextResponse.json(
+        { ...getMockStats(startDateStr, endDateStr, loaiXNK), isMock: true },
+        { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+      );
     }
 
     // 2. Query Taxes from rpHang
@@ -231,27 +234,33 @@ export async function GET(request: NextRequest) {
     const enterprisesRes = await enterprisesRequest.query(enterprisesQuery);
     const enterprises = enterprisesRes.recordset;
 
-    return NextResponse.json({
-      isMock: false,
-      kpis: {
-        totalDeclarations: kpiRow.totalDeclarations,
-        totalValueUSD: kpiRow.totalValueUSD,
-        totalContainers: kpiRow.totalContainers,
-        totalWeightTNE: kpiRow.totalWeightTNE,
-        totalTaxVND,
+    return NextResponse.json(
+      {
+        isMock: false,
+        kpis: {
+          totalDeclarations: kpiRow.totalDeclarations,
+          totalValueUSD: kpiRow.totalValueUSD,
+          totalContainers: kpiRow.totalContainers,
+          totalWeightTNE: kpiRow.totalWeightTNE,
+          totalTaxVND,
+        },
+        taxBreakdown,
+        trends,
+        channels,
+        commodities,
+        countries,
+        enterprises,
+        topEnterprises: enterprises,
       },
-      taxBreakdown,
-      trends,
-      channels,
-      commodities,
-      countries,
-      enterprises,
-      topEnterprises: enterprises,
-    });
+      { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+    );
 
   } catch (error) {
     console.error('Database connection or query failed. Falling back to Mock Data. Error:', error);
     // If the database connection fails, return mock data so the application is still interactive
-    return NextResponse.json({ ...getMockStats(startDateStr, endDateStr, loaiXNK), isMock: true });
+    return NextResponse.json(
+      { ...getMockStats(startDateStr, endDateStr, loaiXNK), isMock: true },
+      { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
+    );
   }
 }
