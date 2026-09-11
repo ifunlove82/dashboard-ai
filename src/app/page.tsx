@@ -49,6 +49,8 @@ import {
   ArrowUpDown,
   Info,
   X,
+  Download,
+  Command,
 } from "lucide-react";
 
 // Helper for inline bold parsing
@@ -179,6 +181,8 @@ export default function CustomsDashboard() {
   // Theme state & client mount flag
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [csvExported, setCsvExported] = useState(false);
 
   const reportRef = useRef<HTMLDivElement>(null);
   const statsAbortRef = useRef<AbortController | null>(null);
@@ -358,7 +362,8 @@ export default function CustomsDashboard() {
     }
   }, []);
 
-  // Power-User Keyboard shortcuts: '/' focuses search, 'Escape' clears, 'D' theme, 'P' print
+
+  // Power-User Keyboard shortcuts: '/', 'Esc', 'D', 'P', 'R', '1', '2', '3', '?'
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInput = ["INPUT", "SELECT", "TEXTAREA"].includes(
@@ -368,18 +373,33 @@ export default function CustomsDashboard() {
       if (e.key === "/" && !isInput) {
         e.preventDefault();
         searchInputRef.current?.focus();
-      } else if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
-        setSearchQuery("");
-        searchInputRef.current?.blur();
+      } else if (e.key === "Escape") {
+        if (showShortcutsModal) {
+          setShowShortcutsModal(false);
+        } else if (document.activeElement === searchInputRef.current) {
+          setSearchQuery("");
+          searchInputRef.current?.blur();
+        }
+      } else if (!isInput && e.key === "?") {
+        e.preventDefault();
+        setShowShortcutsModal((prev) => !prev);
       } else if (!isInput && (e.key === "d" || e.key === "D")) {
         toggleTheme();
       } else if (!isInput && (e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey) {
         handleExportPDF();
+      } else if (!isInput && (e.key === "r" || e.key === "R") && !aiLoading) {
+        runAiAnalysis();
+      } else if (!isInput && e.key === "1") {
+        setDatePreset("first-half-2026");
+      } else if (!isInput && e.key === "2") {
+        setDatePreset("q1-2026");
+      } else if (!isInput && e.key === "3") {
+        setDatePreset("q2-2026");
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleTheme]);
+  }, [toggleTheme, showShortcutsModal, aiLoading, runAiAnalysis]);
 
   // Tax Breakdown Data: Unambiguous domain taxonomy with dedicated fiscal palette
   const taxPieData = useMemo(() => {
@@ -436,6 +456,34 @@ export default function CustomsDashboard() {
       return (valA - valB) * factor;
     });
   }, [stats, searchQuery, sortField, sortOrder]);
+
+  // Export Enterprises table to UTF-8 CSV (Excel-ready with BOM and leading-zero preservation)
+  const handleExportCSV = useCallback(() => {
+    const data = filteredEnterprises;
+    if (!data || data.length === 0) return;
+    const header = ["Thứ hạng", "Mã số thuế", "Tên Doanh nghiệp", "Kim ngạch (USD)", "Số Tờ khai", "Container (TEU)"];
+    const rows = data.map((ent: any, idx: number) => [
+      idx + 1,
+      `="${ent.taxId}"`,
+      `"${(ent.name || "").replace(/"/g, '""')}"`,
+      ent.valueUSD || 0,
+      ent.declarations || 0,
+      ent.containers || 0,
+    ]);
+
+    const csvContent = "\uFEFF" + [header.join(","), ...rows.map((r: (string | number)[]) => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Top_Doanh_Nghiep_XNK_${datePreset}_${loaiXNK}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setCsvExported(true);
+    setTimeout(() => setCsvExported(false), 2000);
+  }, [filteredEnterprises, datePreset, loaiXNK]);
 
   const navItems = [
     { id: "overview", label: "Tổng quan chỉ số", icon: TrendingUp },
@@ -533,17 +581,22 @@ export default function CustomsDashboard() {
               Tổng cục Hải quan
             </span>
           </div>
-          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5 border-t border-slate-100/60 dark:border-slate-800/60">
-            <span className="flex items-center gap-1" title="Nhấn phím / để tìm doanh nghiệp">
-              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300">/</kbd> Tìm
+          <button
+            type="button"
+            onClick={() => setShowShortcutsModal(true)}
+            className="w-full flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100/60 dark:border-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group cursor-pointer text-left"
+            title="Nhấn để xem toàn bộ phím tắt hoặc bấm phím ?"
+          >
+            <span className="flex items-center gap-1">
+              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300 group-hover:border-blue-400 transition-colors">/</kbd> Tìm
             </span>
-            <span className="flex items-center gap-1" title="Nhấn phím D để chuyển nền Sáng/Tối">
-              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300">D</kbd> Theme
+            <span className="flex items-center gap-1">
+              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300 group-hover:border-blue-400 transition-colors">D</kbd> Theme
             </span>
-            <span className="flex items-center gap-1" title="Nhấn phím P để in báo cáo PDF">
-              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300">P</kbd> In PDF
+            <span className="flex items-center gap-1">
+              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300 group-hover:border-blue-400 transition-colors">?</kbd> Phím tắt
             </span>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -735,7 +788,14 @@ export default function CustomsDashboard() {
           <div id="overview" className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 md:gap-4 scroll-mt-6">
             
             {/* Total Declarations */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors flex flex-col justify-between">
+            <Card
+              title={
+                stats?.kpis?.totalDeclarations
+                  ? `Tổng số tờ khai: ${stats.kpis.totalDeclarations.toLocaleString("vi-VN")} tờ khai\nƯớc tính tần suất: ~${Math.round(stats.kpis.totalDeclarations / (datePreset === "first-half-2026" ? 180 : 90)).toLocaleString("vi-VN")} tờ khai/ngày`
+                  : undefined
+              }
+              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors flex flex-col justify-between cursor-help"
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Tổng số tờ khai
@@ -764,7 +824,14 @@ export default function CustomsDashboard() {
             </Card>
 
             {/* Total USD Value */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-sky-400 dark:hover:border-sky-600 transition-colors flex flex-col justify-between">
+            <Card
+              title={
+                stats?.kpis?.totalValueUSD
+                  ? `Kim ngạch chính xác: $${stats.kpis.totalValueUSD.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD\nGiá trị quy đổi: ${((stats.kpis.totalValueUSD * 25000)).toLocaleString("vi-VN")} VND (Tỷ giá 25.000)\nTrị giá trung bình: $${stats.kpis.totalDeclarations ? Math.round(stats.kpis.totalValueUSD / stats.kpis.totalDeclarations).toLocaleString("en-US") : 0} USD/tờ khai`
+                  : undefined
+              }
+              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-sky-400 dark:hover:border-sky-600 transition-colors flex flex-col justify-between cursor-help"
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Kim ngạch XNK
@@ -789,7 +856,14 @@ export default function CustomsDashboard() {
             </Card>
 
             {/* Total Tax Revenue - Disciplined Slate/Indigo */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors flex flex-col justify-between">
+            <Card
+              title={
+                stats?.kpis?.totalTaxVND
+                  ? `Số thu nộp NSNN chính xác: ${stats.kpis.totalTaxVND.toLocaleString("vi-VN")} VND\nTỷ lệ động viên ngân sách: ${stats.kpis.totalValueUSD ? ((stats.kpis.totalTaxVND / (stats.kpis.totalValueUSD * 25000)) * 100).toFixed(3) : 0}% trên tổng kim ngạch quy đổi`
+                  : undefined
+              }
+              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors flex flex-col justify-between cursor-help"
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Thuế Hải quan đã thu
@@ -814,7 +888,14 @@ export default function CustomsDashboard() {
             </Card>
 
             {/* Volume & Weight */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-teal-400 dark:hover:border-teal-500 transition-colors flex flex-col justify-between">
+            <Card
+              title={
+                stats?.kpis?.totalContainers
+                  ? `Lượng container: ${stats.kpis.totalContainers.toLocaleString("vi-VN")} TEU\nTrọng lượng thực tế: ${(stats.kpis.totalWeightTNE || 0).toLocaleString("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} TNE (Tấn)\nTải trọng trung bình: ${((stats.kpis.totalWeightTNE || 0) / stats.kpis.totalContainers).toFixed(2)} TNE/TEU`
+                  : undefined
+              }
+              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-teal-400 dark:hover:border-teal-500 transition-colors flex flex-col justify-between cursor-help"
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Vận chuyển & Container
@@ -1279,34 +1360,57 @@ export default function CustomsDashboard() {
                   </CardDescription>
                 </div>
 
-                {/* Search Input with Keyboard Shortcut '/' & Clear Button */}
-                <div className="relative w-full md:w-72">
-                  <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    maxLength={100}
-                    aria-label="Tìm kiếm doanh nghiệp theo tên hoặc mã số thuế"
-                    placeholder="Tìm theo tên hoặc MST... (phím /)"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full text-xs pl-8 pr-12 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 touch-manipulation"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery("");
-                        searchInputRef.current?.focus();
-                      }}
-                      aria-label="Xóa nội dung tìm kiếm"
-                      className="absolute right-7 md:right-8 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                    >
-                      <X className="size-3" />
-                    </button>
-                  )}
-                  <kbd className="hidden md:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-200/70 dark:bg-slate-800 text-slate-500 rounded border border-slate-300/80 dark:border-slate-700 pointer-events-none">
-                    /
-                  </kbd>
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  {/* Search Input with Keyboard Shortcut '/' & Clear Button */}
+                  <div className="relative flex-1 md:w-72">
+                    <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      maxLength={100}
+                      aria-label="Tìm kiếm doanh nghiệp theo tên hoặc mã số thuế"
+                      placeholder="Tìm theo tên hoặc MST... (phím /)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full text-xs pl-8 pr-12 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 touch-manipulation"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          searchInputRef.current?.focus();
+                        }}
+                        aria-label="Xóa nội dung tìm kiếm"
+                        className="absolute right-7 md:right-8 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    )}
+                    <kbd className="hidden md:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-200/70 dark:bg-slate-800 text-slate-500 rounded border border-slate-300/80 dark:border-slate-700 pointer-events-none">
+                      /
+                    </kbd>
+                  </div>
+
+                  {/* Excel/CSV Export Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportCSV}
+                    disabled={!filteredEnterprises || filteredEnterprises.length === 0}
+                    className={`gap-1.5 text-xs font-medium shrink-0 active:scale-95 transition-all duration-150 ${
+                      csvExported
+                        ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    }`}
+                    title="Xuất bảng Top Doanh nghiệp ra file CSV tương thích Excel (chuẩn UTF-8 BOM, bảo toàn số 0 mã số thuế)"
+                  >
+                    {csvExported ? (
+                      <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <Download className="size-3.5 text-slate-500 dark:text-slate-400" />
+                    )}
+                    <span className="hidden sm:inline">{csvExported ? "Đã xuất CSV" : "Xuất CSV"}</span>
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -1472,6 +1576,109 @@ export default function CustomsDashboard() {
 
         </div>
       </main>
+
+      {/* Command HUD / Keyboard Shortcuts Modal */}
+      {showShortcutsModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="shortcuts-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setShowShortcutsModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Command className="size-4" />
+                </div>
+                <div>
+                  <h3 id="shortcuts-title" className="text-sm font-bold text-slate-900 dark:text-white">
+                    Phím tắt hệ thống (Command HUD)
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Thao tác nhanh cho lãnh đạo & chuyên viên Hải quan
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowShortcutsModal(false)}
+                aria-label="Đóng cửa sổ phím tắt"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Shortcut List */}
+            <div className="p-4 space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Tìm kiếm Doanh nghiệp / MST</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                  /
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Xóa tìm kiếm / Đóng cửa sổ</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                  Esc
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Bật / Tắt giao diện Sáng / Tối</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                  D
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">In ấn / Xuất báo cáo PDF</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                  P
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Kích hoạt trợ lý AI phân tích</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                  R
+                </kbd>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Chuyển kỳ: 6 Tháng / Quý 1 / Quý 2</span>
+                <div className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">1</kbd>
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">2</kbd>
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">3</kbd>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                <span className="text-slate-700 dark:text-slate-300 font-medium">Mở bảng trợ giúp phím tắt này</span>
+                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                  ?
+                </kbd>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+              <span>Bấm phím bất kỳ ngoài ô nhập liệu</span>
+              <span className="flex items-center gap-1">
+                Nhấn <kbd className="px-1.5 py-0.2 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-mono text-[10px]">Esc</kbd> để thoát
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global CSS for Print and Vector PDF formatting */}
       <style jsx global>{`
