@@ -1091,8 +1091,11 @@ export default function CustomsDashboard() {
                     <Globe2 className="size-4 text-blue-600" />
                     Bảng xếp hạng Top Doanh nghiệp Hoạt động Năng động nhất
                   </CardTitle>
-                  <CardDescription className="text-xs mt-0.5">
-                    Thống kê theo tổng kim ngạch quy đổi USD và số lượng container (Bấm tiêu đề cột để sắp xếp)
+                  <CardDescription className="text-xs mt-0.5 flex flex-wrap items-center justify-between gap-1">
+                    <span>Thống kê theo tổng kim ngạch quy đổi USD và số lượng container (Bấm tiêu đề để sắp xếp)</span>
+                    <span className="inline-flex sm:hidden text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
+                      Vuốt ngang xem đủ cột →
+                    </span>
                   </CardDescription>
                 </div>
 
@@ -1106,7 +1109,7 @@ export default function CustomsDashboard() {
                     placeholder="Tìm theo tên hoặc MST... (phím /)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full text-xs pl-8 pr-8 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full text-xs pl-8 pr-8 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 touch-manipulation"
                   />
                   <kbd className="hidden md:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-200/70 dark:bg-slate-800 text-slate-500 rounded border border-slate-300/80 dark:border-slate-700 pointer-events-none">
                     /
@@ -1115,7 +1118,7 @@ export default function CustomsDashboard() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
                 <table className="w-full text-left text-xs border-collapse min-w-[640px]">
                   <thead>
                     <tr className="bg-slate-50/90 dark:bg-slate-800/60 sticky top-0 z-10 backdrop-blur-xs text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200/80 dark:border-slate-800">
