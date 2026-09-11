@@ -4,9 +4,15 @@ import { getMockStats } from '@/lib/mockData';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const startDateStr = searchParams.get('startDate') || '2026-01-01';
-  const endDateStr = searchParams.get('endDate') || '2026-06-30';
-  const loaiXNK = searchParams.get('loaiXNK') || 'ALL'; // ALL, NK, XK
+  const rawStartDate = searchParams.get('startDate') || '2026-01-01';
+  const rawEndDate = searchParams.get('endDate') || '2026-06-30';
+  const rawLoaiXNK = searchParams.get('loaiXNK') || 'ALL'; // ALL, NK, XK
+
+  // Input validation & sanitization (hardening)
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const startDateStr = dateRegex.test(rawStartDate) ? rawStartDate : '2026-01-01';
+  const endDateStr = dateRegex.test(rawEndDate) ? rawEndDate : '2026-06-30';
+  const loaiXNK = ['ALL', 'NK', 'XK'].includes(rawLoaiXNK) ? rawLoaiXNK : 'ALL';
 
   console.log(`Fetching stats for range: ${startDateStr} to ${endDateStr}, type: ${loaiXNK}`);
 
@@ -240,6 +246,7 @@ export async function GET(request: NextRequest) {
       commodities,
       countries,
       enterprises,
+      topEnterprises: enterprises,
     });
 
   } catch (error) {

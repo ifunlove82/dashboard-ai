@@ -45,6 +45,13 @@ export interface DashboardData {
     declarations: number;
     containers: number;
   }>;
+  topEnterprises?: Array<{
+    taxId: string;
+    name: string;
+    valueUSD: number;
+    declarations: number;
+    containers: number;
+  }>;
 }
 
 export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: string): DashboardData {
@@ -168,5 +175,6 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
     commodities,
     countries,
     enterprises,
+    topEnterprises: enterprises,
   };
 }

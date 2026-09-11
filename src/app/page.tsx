@@ -48,6 +48,7 @@ import {
   BrainCircuit,
   ArrowUpDown,
   Info,
+  X,
 } from "lucide-react";
 
 // Helper for inline bold parsing
@@ -125,25 +126,31 @@ function renderMarkdown(text: string) {
   });
 }
 
-// Currency & number formatters
-const formatUSD = (val: number) => {
+// Resilient currency & number formatters (handles null, undefined, NaN, Infinity)
+const formatUSD = (val?: number | null) => {
+  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return "$0";
   if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
   if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-  return `$${val.toLocaleString("en-US")}`;
+  return `$${Math.round(val).toLocaleString("en-US")}`;
 };
 
-const formatVND = (val: number) => {
+const formatVND = (val?: number | null) => {
+  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return "0 VND";
   if (val >= 1e12) return `${(val / 1e12).toFixed(2)}T VND`;
   if (val >= 1e9) return `${(val / 1e9).toFixed(1)} Tỷ VND`;
   if (val >= 1e6) return `${(val / 1e6).toFixed(0)} Tr VND`;
-  return `${val.toLocaleString("vi-VN")} VND`;
+  return `${Math.round(val).toLocaleString("vi-VN")} VND`;
 };
 
-const formatNumber = (val: number) => val?.toLocaleString("vi-VN") || "0";
+const formatNumber = (val?: number | null) => {
+  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return "0";
+  return Math.round(val).toLocaleString("vi-VN");
+};
 
 export default function CustomsDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [loaiXNK, setLoaiXNK] = useState("ALL");
   const [datePreset, setDatePreset] = useState("first-half-2026");
   const [dbStatus, setDbStatus] = useState<"live" | "fallback">("fallback");
@@ -164,6 +171,16 @@ export default function CustomsDashboard() {
   const [isDark, setIsDark] = useState(false);
 
   const reportRef = useRef<HTMLDivElement>(null);
+  const statsAbortRef = useRef<AbortController | null>(null);
+  const aiAbortRef = useRef<AbortController | null>(null);
+
+  // Cleanup abort controllers on unmount
+  useEffect(() => {
+    return () => {
+      statsAbortRef.current?.abort();
+      aiAbortRef.current?.abort();
+    };
+  }, []);
 
   // Smooth scroll handler for navigation
   const scrollToSection = (sectionId: string) => {
@@ -252,10 +269,14 @@ export default function CustomsDashboard() {
 
   const { start: startDate, end: endDate } = getDateRange(datePreset);
 
-  // Run AI analysis - Actionable administrative responses
+  // Run AI analysis - Abortable, race-condition protected
   const runAiAnalysis = useCallback(async (currentStats?: any) => {
     const target = currentStats || stats;
     if (!target) return;
+
+    aiAbortRef.current?.abort();
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
 
     setAiLoading(true);
     try {
@@ -263,34 +284,50 @@ export default function CustomsDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(target),
+        signal: controller.signal,
       });
+      if (!res.ok) {
+        throw new Error(`Phản hồi lỗi ${res.status}`);
+      }
       const data = await res.json();
       setAiInsight(data.insight || "");
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") return;
       console.error("AI Analysis failed:", error);
       setAiInsight(
-        "### Không thể kết nối với dịch vụ Phân tích AI\n" +
-        "- **Nguyên nhân:** Kết nối mạng bị gián đoạn hoặc chưa thiết lập cấu hình khóa `GEMINI_API_KEY`.\n" +
-        "- **Xử lý:** Vui lòng kiểm tra biến môi trường trong file `.env.local` hoặc nhấp lại nút **'Phân tích AI'** trên thanh công cụ để thử lại."
+        "### Không thể hoàn tất phân tích nhận định AI\n" +
+        `- **Thông tin lỗi:** ${error.message || "Gián đoạn mạng hoặc dịch vụ bận."}\n` +
+        "- **Xử lý:** Vui lòng kiểm tra file cấu hình `.env.local` hoặc nhấp nút **'Phân tích AI'** trên thanh công cụ để thử lại."
       );
     } finally {
       setAiLoading(false);
     }
   }, [stats]);
 
-  // Data fetching without unmounting the view
+  // Data fetching - Abortable, race-condition protected, error surfaced
   const fetchStats = useCallback(async () => {
+    statsAbortRef.current?.abort();
+    const controller = new AbortController();
+    statsAbortRef.current = controller;
+
     setLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch(
-        `/api/stats?startDate=${startDate}&endDate=${endDate}&loaiXNK=${loaiXNK}`
+        `/api/stats?startDate=${startDate}&endDate=${endDate}&loaiXNK=${loaiXNK}`,
+        { signal: controller.signal }
       );
+      if (!res.ok) {
+        throw new Error(`Máy chủ báo lỗi ${res.status}: ${res.statusText}`);
+      }
       const data = await res.json();
       setStats(data);
       setDbStatus(data.isMock ? "fallback" : "live");
       runAiAnalysis(data);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === "AbortError") return;
       console.error("Failed to fetch dashboard data:", error);
+      setFetchError(error.message || "Lỗi đường truyền kết nối");
       setDbStatus("fallback");
     } finally {
       setLoading(false);
@@ -351,8 +388,9 @@ export default function CustomsDashboard() {
 
   // Filtered & Sorted Enterprises
   const filteredEnterprises = useMemo(() => {
-    if (!stats?.topEnterprises) return [];
-    let list = stats.topEnterprises.filter((ent: any) => {
+    const listSource = stats?.enterprises || stats?.topEnterprises || [];
+    if (!listSource || listSource.length === 0) return [];
+    let list = listSource.filter((ent: any) => {
       const q = searchQuery.toLowerCase().trim();
       if (!q) return true;
       return (
@@ -363,7 +401,9 @@ export default function CustomsDashboard() {
 
     list = [...list].sort((a: any, b: any) => {
       const factor = sortOrder === "desc" ? -1 : 1;
-      return (a[sortField] - b[sortField]) * factor;
+      const valA = Number(a[sortField]) || 0;
+      const valB = Number(b[sortField]) || 0;
+      return (valA - valB) * factor;
     });
 
     return list;
@@ -635,6 +675,29 @@ export default function CustomsDashboard() {
             </div>
           </div>
 
+          {/* Connection Error Banner with Retry */}
+          {fetchError && !stats && (
+            <div className="p-5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs" role="alert">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="size-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-bold">Không thể kết nối máy chủ thống kê Hải quan</h3>
+                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
+                    {fetchError}. Vui lòng kiểm tra lại kết nối mạng hoặc thử lại.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => fetchStats()}
+                size="sm"
+                className="bg-rose-600 hover:bg-rose-700 text-white shrink-0 self-start sm:self-center gap-1.5 text-xs font-semibold shadow-2xs"
+              >
+                <RefreshCw className="size-3.5" />
+                Thử lại kết nối
+              </Button>
+            </div>
+          )}
+
           {/* 1. Refined KPI Cards Grid */}
           <div id="overview" className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 md:gap-4 scroll-mt-6">
             
@@ -661,7 +724,7 @@ export default function CustomsDashboard() {
                             stats.kpis.totalDeclarations) *
                           100
                         ).toFixed(1)}%`
-                      : "65%"}
+                      : "0%"}
                   </span>
                 </div>
               </CardContent>
@@ -686,7 +749,7 @@ export default function CustomsDashboard() {
                   <span className="font-semibold text-slate-700 dark:text-slate-300" title="Quy đổi theo tỷ giá hạch toán tạm tính 25.000 VND/USD">
                     {stats?.kpis?.totalValueUSD
                       ? `${((stats.kpis.totalValueUSD * 25000) / 1e12).toFixed(1)} Tỷ VND`
-                      : "0"}
+                      : "0 Tỷ VND"}
                   </span>
                 </div>
               </CardContent>
@@ -711,7 +774,7 @@ export default function CustomsDashboard() {
                   <span className="font-bold text-indigo-600 dark:text-indigo-400">
                     {stats?.kpis?.totalTaxVND && stats?.kpis?.totalValueUSD
                       ? `${((stats.kpis.totalTaxVND / (stats.kpis.totalValueUSD * 25000)) * 100).toFixed(2)}%`
-                      : "0%"}
+                      : "0.00%"}
                   </span>
                 </div>
               </CardContent>
@@ -751,11 +814,6 @@ export default function CustomsDashboard() {
               <CardHeader className="pb-2 pt-4 px-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono">
-                        02 / TIẾN ĐỘ THU
-                      </span>
-                    </div>
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                       <TrendingUp className="size-4 text-blue-600" />
                       Xu hướng Kim ngạch & Thu ngân sách theo chuỗi thời gian
@@ -767,74 +825,81 @@ export default function CustomsDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="h-72 sm:h-80 px-2 pb-3">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <ComposedChart data={stats?.trends || []}>
-                    <defs>
-                      <linearGradient id="usdGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke={isDark ? "#1E293B" : "#F1F5F9"}
-                    />
-                    <XAxis
-                      dataKey="date"
-                      stroke="#94A3B8"
-                      fontSize={11}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      yAxisId="left"
-                      stroke="#2563EB"
-                      fontSize={10}
-                      tickLine={false}
-                      tickFormatter={(v) => `$${(v / 1e6).toFixed(0)}M`}
-                    />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      stroke="#4F46E5"
-                      fontSize={10}
-                      tickLine={false}
-                      tickFormatter={(v) => `${(v / 1e9).toFixed(0)} Tỷ`}
-                    />
-                    <Tooltip
-                      formatter={(value: any, name: any) => {
-                        if (name === "Kim ngạch (USD)") return [formatUSD(value), name];
-                        return [formatVND(value), name];
-                      }}
-                      contentStyle={{
-                        borderRadius: "10px",
-                        backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-                        border: isDark ? "1px solid #1E293B" : "1px solid #E2E8F0",
-                        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Legend verticalAlign="top" height={34} wrapperStyle={{ fontSize: 11 }} />
-                    <Area
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="valueUSD"
-                      name="Kim ngạch (USD)"
-                      fill="url(#usdGrad)"
-                      stroke="#2563EB"
-                      strokeWidth={2.5}
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="taxVND"
-                      name="Thuế thu được (VND)"
-                      stroke="#4F46E5"
-                      strokeWidth={2.5}
-                      dot={{ r: 3.5, fill: "#4F46E5", strokeWidth: 0 }}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
+                {stats?.trends && stats.trends.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <ComposedChart data={stats.trends}>
+                      <defs>
+                        <linearGradient id="usdGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2563EB" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke={isDark ? "#1E293B" : "#F1F5F9"}
+                      />
+                      <XAxis
+                        dataKey="date"
+                        stroke="#94A3B8"
+                        fontSize={11}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        stroke="#2563EB"
+                        fontSize={10}
+                        tickLine={false}
+                        tickFormatter={(v) => `$${(v / 1e6).toFixed(0)}M`}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        stroke="#4F46E5"
+                        fontSize={10}
+                        tickLine={false}
+                        tickFormatter={(v) => `${(v / 1e9).toFixed(0)} Tỷ`}
+                      />
+                      <Tooltip
+                        formatter={(value: any, name: any) => {
+                          if (name === "Kim ngạch (USD)") return [formatUSD(value), name];
+                          return [formatVND(value), name];
+                        }}
+                        contentStyle={{
+                          borderRadius: "10px",
+                          backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+                          border: isDark ? "1px solid #1E293B" : "1px solid #E2E8F0",
+                          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Legend verticalAlign="top" height={34} wrapperStyle={{ fontSize: 11 }} />
+                      <Area
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="valueUSD"
+                        name="Kim ngạch (USD)"
+                        fill="url(#usdGrad)"
+                        stroke="#2563EB"
+                        strokeWidth={2.5}
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="taxVND"
+                        name="Thuế thu được (VND)"
+                        stroke="#4F46E5"
+                        strokeWidth={2.5}
+                        dot={{ r: 3.5, fill: "#4F46E5", strokeWidth: 0 }}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+                    <TrendingUp className="size-8 mb-2 stroke-1 text-slate-300 dark:text-slate-600" />
+                    Chưa có số liệu chuỗi thời gian cho bộ lọc đã chọn
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -915,11 +980,6 @@ export default function CustomsDashboard() {
             {/* Top Commodities (7 Columns) - Sky Blue palette avoiding Green clash */}
             <Card className="xl:col-span-7 border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs page-break-avoid min-w-0">
               <CardHeader className="pb-1 pt-4 px-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-mono">
-                    03 / HÀNG HÓA TRỌNG ĐIỂM
-                  </span>
-                </div>
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                   <Boxes className="size-4 text-sky-600" />
                   Top nhóm hàng hóa có trị giá giao dịch lớn nhất
@@ -929,41 +989,48 @@ export default function CustomsDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-72 sm:h-80 px-2 pb-3">
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <BarChart
-                    data={(stats?.commodities || []).slice(0, 6)}
-                    layout="vertical"
-                    margin={{ top: 10, right: 25, left: 15, bottom: 5 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      horizontal={false}
-                      stroke={isDark ? "#1E293B" : "#F1F5F9"}
-                    />
-                    <XAxis
-                      type="number"
-                      stroke="#94A3B8"
-                      fontSize={9}
-                      tickFormatter={(v) => `${(v / 1e12).toFixed(1)}T`}
-                    />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      stroke="#94A3B8"
-                      fontSize={10}
-                      width={130}
-                      tickFormatter={(v) => (v.length > 22 ? `${v.substring(0, 22)}...` : v)}
-                    />
-                    <Tooltip formatter={(value: any) => [formatVND(value), "Trị giá"]} />
-                    <Bar
-                      dataKey="valueVND"
-                      name="Trị giá (VND)"
-                      fill="#0284C7"
-                      radius={[0, 5, 5, 0]}
-                      barSize={16}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                {stats?.commodities && stats.commodities.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    <BarChart
+                      data={stats.commodities.slice(0, 6)}
+                      layout="vertical"
+                      margin={{ top: 10, right: 25, left: 15, bottom: 5 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        horizontal={false}
+                        stroke={isDark ? "#1E293B" : "#F1F5F9"}
+                      />
+                      <XAxis
+                        type="number"
+                        stroke="#94A3B8"
+                        fontSize={9}
+                        tickFormatter={(v) => `${(v / 1e12).toFixed(1)}T`}
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        stroke="#94A3B8"
+                        fontSize={10}
+                        width={130}
+                        tickFormatter={(v) => (v.length > 22 ? `${v.substring(0, 22)}...` : v)}
+                      />
+                      <Tooltip formatter={(value: any) => [formatVND(value), "Trị giá"]} />
+                      <Bar
+                        dataKey="valueVND"
+                        name="Trị giá (VND)"
+                        fill="#0284C7"
+                        radius={[0, 5, 5, 0]}
+                        barSize={16}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+                    <Boxes className="size-8 mb-2 stroke-1 text-slate-300 dark:text-slate-600" />
+                    Chưa có dữ liệu hàng hóa trọng điểm cho kỳ báo cáo này
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1029,7 +1096,13 @@ export default function CustomsDashboard() {
           </div>
 
           {/* 4. AI Executive Intelligence Briefing (Instant authoritative presentation) */}
-          <Card id="ai-briefing" className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-sm page-break-avoid scroll-mt-6">
+          <Card
+            id="ai-briefing"
+            role="region"
+            aria-label="Bản tin nhận định điều hành hải quan"
+            aria-live="polite"
+            className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-sm page-break-avoid scroll-mt-6"
+          >
             <CardHeader className="pb-3 pt-4 px-5 border-b border-slate-100 dark:border-slate-800">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
@@ -1037,14 +1110,9 @@ export default function CustomsDashboard() {
                     <BrainCircuit className="size-4" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-mono">
-                        04 / BẢN TIN ĐIỀU HÀNH
-                      </span>
-                      <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
-                        Phiếu Thông báo Nhận định Điều hành Hải quan
-                      </CardTitle>
-                    </div>
+                    <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                      Phiếu Thông báo Nhận định Điều hành Hải quan
+                    </CardTitle>
                     <CardDescription className="text-xs mt-0.5">
                       Đánh giá rủi ro tờ khai, dự báo tiến độ thu ngân sách và chỉ số vĩ mô từ mô hình Gemini
                     </CardDescription>
@@ -1091,11 +1159,6 @@ export default function CustomsDashboard() {
             <CardHeader className="pb-3 pt-4 px-5 border-b border-slate-100 dark:border-slate-800">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono">
-                      05 / DANH SÁCH DOANH NGHIỆP
-                    </span>
-                  </div>
                   <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                     <Globe2 className="size-4 text-blue-600" />
                     Bảng xếp hạng Top Doanh nghiệp Hoạt động Năng động nhất
@@ -1108,18 +1171,31 @@ export default function CustomsDashboard() {
                   </CardDescription>
                 </div>
 
-                {/* Search Input with Keyboard Shortcut '/' */}
+                {/* Search Input with Keyboard Shortcut '/' & Clear Button */}
                 <div className="relative w-full md:w-72">
                   <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     ref={searchInputRef}
                     type="text"
+                    maxLength={100}
                     aria-label="Tìm kiếm doanh nghiệp theo tên hoặc mã số thuế"
                     placeholder="Tìm theo tên hoặc MST... (phím /)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full text-xs pl-8 pr-8 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 touch-manipulation"
+                    className="w-full text-xs pl-8 pr-12 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 touch-manipulation"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        searchInputRef.current?.focus();
+                      }}
+                      aria-label="Xóa nội dung tìm kiếm"
+                      className="absolute right-7 md:right-8 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  )}
                   <kbd className="hidden md:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-200/70 dark:bg-slate-800 text-slate-500 rounded border border-slate-300/80 dark:border-slate-700 pointer-events-none">
                     /
                   </kbd>
@@ -1136,6 +1212,7 @@ export default function CustomsDashboard() {
                       <th className="py-3 px-4">Tên Doanh nghiệp</th>
                       <th
                         onClick={() => handleSort("valueUSD")}
+                        aria-label="Sắp xếp theo Kim ngạch USD"
                         className="py-3 px-4 text-right cursor-pointer hover:text-blue-600 transition-colors select-none"
                       >
                         <div className="flex items-center justify-end gap-1">
@@ -1145,6 +1222,7 @@ export default function CustomsDashboard() {
                       </th>
                       <th
                         onClick={() => handleSort("declarations")}
+                        aria-label="Sắp xếp theo Số tờ khai"
                         className="py-3 px-4 text-center cursor-pointer hover:text-blue-600 transition-colors select-none"
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -1154,6 +1232,7 @@ export default function CustomsDashboard() {
                       </th>
                       <th
                         onClick={() => handleSort("containers")}
+                        aria-label="Sắp xếp theo Container TEU"
                         className="py-3 px-4 text-center cursor-pointer hover:text-blue-600 transition-colors select-none"
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -1188,11 +1267,13 @@ export default function CustomsDashboard() {
                               <span className="text-slate-500 dark:text-slate-400 font-mono text-xs font-semibold">#{rank}</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px]">
+                          <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
                             {ent.taxId}
                           </td>
-                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
-                            {ent.name}
+                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 max-w-[240px] sm:max-w-[320px]">
+                            <div className="truncate" title={ent.name}>
+                              {ent.name}
+                            </div>
                           </td>
                           <td className="py-3 px-4 text-right font-bold tabular-nums text-slate-900 dark:text-slate-100">
                             {formatUSD(ent.valueUSD)}

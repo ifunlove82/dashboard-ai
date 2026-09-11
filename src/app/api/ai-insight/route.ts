@@ -3,30 +3,38 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Simple fallback analytical engine if GEMINI_API_KEY is missing
 function generateLocalInsight(data: any): string {
-  const { kpis, taxBreakdown, commodities, countries, enterprises } = data;
+  if (!data) return "Chưa có dữ liệu thống kê hợp lệ để tạo nhận định.";
+  const { kpis = {}, taxBreakdown = {}, commodities = [], countries = [], enterprises = [] } = data;
   
-  const formattedValueUSD = (kpis.totalValueUSD / 1e6).toFixed(2);
-  const formattedTaxVND = (kpis.totalTaxVND / 1e12).toFixed(3);
+  const totalValUSD = kpis.totalValueUSD || 0;
+  const totalTax = kpis.totalTaxVND || 0;
+  const totalDecl = kpis.totalDeclarations || 0;
+  const totalCont = kpis.totalContainers || 0;
+  const totalWeight = kpis.totalWeightTNE || 0;
+
+  const formattedValueUSD = (totalValUSD / 1e6).toFixed(2);
+  const formattedTaxVND = (totalTax / 1e12).toFixed(3);
   
-  const topComm = commodities && commodities.length > 0 ? commodities[0].name : 'N/A';
-  const topCommVal = commodities && commodities.length > 0 ? (commodities[0].valueVND / 1e12).toFixed(2) : '0';
+  const topComm = commodities && commodities.length > 0 ? commodities[0].name : 'Chưa xác định';
+  const topCommVal = commodities && commodities.length > 0 ? ((commodities[0].valueVND || 0) / 1e12).toFixed(2) : '0';
   
-  const topPartner = countries && countries.length > 0 ? countries[0].name : 'N/A';
-  const topPartnerVal = countries && countries.length > 0 ? (countries[0].valueUSD / 1e6).toFixed(2) : '0';
+  const topPartner = countries && countries.length > 0 ? countries[0].name : 'Chưa xác định';
+  const topPartnerVal = countries && countries.length > 0 ? ((countries[0].valueUSD || 0) / 1e6).toFixed(2) : '0';
   
-  const topEnt = enterprises && enterprises.length > 0 ? enterprises[0].name : 'N/A';
+  const topEnt = enterprises && enterprises.length > 0 ? enterprises[0].name : 'Chưa xác định';
   
-  const thueXNKPct = ((taxBreakdown.thueXNK / kpis.totalTaxVND) * 100).toFixed(1);
-  const thueVATPercent = ((taxBreakdown.thueV / kpis.totalTaxVND) * 100).toFixed(1);
-  const thueSCTPercent = ((taxBreakdown.thueT / kpis.totalTaxVND) * 100).toFixed(1);
+  const thueXNKPct = totalTax > 0 ? (((taxBreakdown.thueXNK || 0) / totalTax) * 100).toFixed(1) : "0.0";
+  const thueVATPercent = totalTax > 0 ? (((taxBreakdown.thueV || 0) / totalTax) * 100).toFixed(1) : "0.0";
+  const thueSCTPercent = totalTax > 0 ? (((taxBreakdown.thueT || 0) / totalTax) * 100).toFixed(1) : "0.0";
+  const containerEfficiency = totalCont > 0 ? (totalWeight / totalCont).toFixed(1) : "0.0";
 
   return `### BÁO CÁO PHÂN TÍCH VÀ NHẬN ĐỊNH HẢI QUAN (PHÂN TÍCH ĐỘC LẬP)
 
 *Dưới đây là nhận định tự động dựa trên số liệu thống kê hiện tại của hệ thống từ ngày đăng ký tờ khai.*
 
 #### 1. Tổng quan hoạt động Xuất Nhập Khẩu
-- **Quy mô thương mại:** Tổng kim ngạch đạt **${formattedValueUSD} triệu USD** thông qua **${kpis.totalDeclarations.toLocaleString()} tờ khai** hải quan.
-- **Lưu lượng vận tải:** Đạt **${kpis.totalContainers.toLocaleString()} container** với tổng trọng lượng hàng hóa vận chuyển là **${kpis.totalWeightTNE.toLocaleString()} tấn**. Hiệu suất trung bình đạt khoảng ${(kpis.totalWeightTNE / kpis.totalContainers).toFixed(1)} tấn mỗi container, cho thấy mật độ hàng hóa ổn định.
+- **Quy mô thương mại:** Tổng kim ngạch đạt **${formattedValueUSD} triệu USD** thông qua **${totalDecl.toLocaleString()} tờ khai** hải quan.
+- **Lưu lượng vận tải:** Đạt **${totalCont.toLocaleString()} container (TEU)** với tổng trọng lượng hàng hóa vận chuyển là **${totalWeight.toLocaleString()} tấn (TNE)**. Hiệu suất trung bình đạt khoảng ${containerEfficiency} tấn mỗi container, cho thấy mật độ hàng hóa ổn định.
 
 #### 2. Phân tích Cơ cấu Thuế hải quan
 Tổng số thuế thu được đạt **${formattedTaxVND} nghìn tỷ VND**. Cơ cấu thuế ghi nhận:
