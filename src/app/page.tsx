@@ -165,7 +165,7 @@ export default function CustomsDashboard() {
 
   const reportRef = useRef<HTMLDivElement>(null);
 
-  // Smooth scroll handler for sidebar navigation
+  // Smooth scroll handler for navigation
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
     const element = document.getElementById(sectionId);
@@ -173,6 +173,28 @@ export default function CustomsDashboard() {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  // Scroll-spy: Track active section on natural viewport scroll
+  useEffect(() => {
+    const sectionIds = ["overview", "trends-tax", "commodities-channels", "ai-briefing", "enterprises"];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: "-15% 0px -60% 0px", threshold: 0.1 }
+    );
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Keyboard shortcuts: '/' focuses search, 'Escape' clears
   useEffect(() => {
@@ -343,6 +365,14 @@ export default function CustomsDashboard() {
     return list;
   }, [stats, searchQuery, sortField, sortOrder]);
 
+  const navItems = [
+    { id: "overview", label: "Tổng quan chỉ số", icon: TrendingUp },
+    { id: "trends-tax", label: "Xu hướng & Thuế thu", icon: Award },
+    { id: "commodities-channels", label: "Hàng hóa & Phân luồng", icon: Boxes },
+    { id: "ai-briefing", label: "Bản tin Nhận định AI", icon: BrainCircuit },
+    { id: "enterprises", label: "Doanh nghiệp XNK", icon: Briefcase },
+  ];
+
   return (
     <div className="flex min-h-screen bg-slate-100/70 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased">
       
@@ -353,7 +383,7 @@ export default function CustomsDashboard() {
         </div>
       )}
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation - Fixed & Smooth Scrollable */}
       <aside className="w-64 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/95 p-5 flex flex-col justify-between shrink-0 hidden lg:flex print:hidden shadow-xs sticky top-0 h-screen">
         <div className="space-y-6">
           {/* Logo & Operational Title */}
@@ -371,76 +401,31 @@ export default function CustomsDashboard() {
             </div>
           </div>
 
-          {/* Navigation Items with Smooth Scrolling */}
+          {/* Navigation Items with Active Tracking */}
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 block mb-2">
               Phân hệ Phân tích
             </span>
-            <Button
-              variant={activeSection === "overview" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => scrollToSection("overview")}
-              className={`w-full justify-start gap-2.5 font-medium text-xs ${
-                activeSection === "overview"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <TrendingUp className="size-4" />
-              Tổng quan chỉ số
-            </Button>
-            <Button
-              variant={activeSection === "trends-tax" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => scrollToSection("trends-tax")}
-              className={`w-full justify-start gap-2.5 font-medium text-xs ${
-                activeSection === "trends-tax"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Award className="size-4" />
-              Xu hướng & Thuế thu
-            </Button>
-            <Button
-              variant={activeSection === "commodities-channels" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => scrollToSection("commodities-channels")}
-              className={`w-full justify-start gap-2.5 font-medium text-xs ${
-                activeSection === "commodities-channels"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Boxes className="size-4" />
-              Hàng hóa & Phân luồng
-            </Button>
-            <Button
-              variant={activeSection === "ai-briefing" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => scrollToSection("ai-briefing")}
-              className={`w-full justify-start gap-2.5 font-medium text-xs ${
-                activeSection === "ai-briefing"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <BrainCircuit className="size-4" />
-              Bản tin Nhận định AI
-            </Button>
-            <Button
-              variant={activeSection === "enterprises" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => scrollToSection("enterprises")}
-              className={`w-full justify-start gap-2.5 font-medium text-xs ${
-                activeSection === "enterprises"
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Briefcase className="size-4" />
-              Doanh nghiệp XNK
-            </Button>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              return (
+                <Button
+                  key={item.id}
+                  variant={isActive ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => scrollToSection(item.id)}
+                  className={`w-full justify-start gap-2.5 font-medium text-xs transition-all ${
+                    isActive
+                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs font-semibold"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Icon className="size-4" />
+                  {item.label}
+                </Button>
+              );
+            })}
           </div>
 
           {/* Database Connection Status Card */}
@@ -499,96 +484,124 @@ export default function CustomsDashboard() {
             </h2>
           </div>
 
-          {/* Action & Filter Toolbar */}
+          {/* Action & Filter Toolbar - Grouped cleanly */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Date Preset Selector */}
-            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-              <Calendar className="size-4 text-slate-500 shrink-0" />
-              <select
-                aria-label="Chọn khoảng thời gian thống kê"
-                value={datePreset}
-                onChange={(e) => setDatePreset(e.target.value)}
-                className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 border-0 focus:ring-0 outline-none cursor-pointer pr-4"
-              >
-                <option value="first-half-2026">6 Tháng đầu năm 2026</option>
-                <option value="q1-2026">Quý 1 / 2026</option>
-                <option value="q2-2026">Quý 2 / 2026</option>
-              </select>
+            {/* Filter Group: Date + Regime */}
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
+              {/* Date Preset Selector */}
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1 rounded-lg shadow-2xs">
+                <Calendar className="size-3.5 text-slate-500 shrink-0" />
+                <select
+                  aria-label="Chọn khoảng thời gian thống kê"
+                  value={datePreset}
+                  onChange={(e) => setDatePreset(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 border-0 focus:ring-0 outline-none cursor-pointer pr-4"
+                >
+                  <option value="first-half-2026">6 Tháng đầu năm 2026</option>
+                  <option value="q1-2026">Quý 1 / 2026</option>
+                  <option value="q2-2026">Quý 2 / 2026</option>
+                </select>
+              </div>
+
+              {/* Regime Type Buttons */}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={loaiXNK === "ALL" ? "default" : "ghost"}
+                  size="xs"
+                  onClick={() => setLoaiXNK("ALL")}
+                  className={`text-xs px-2.5 py-1 ${
+                    loaiXNK === "ALL"
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Toàn bộ
+                </Button>
+                <Button
+                  variant={loaiXNK === "NK" ? "default" : "ghost"}
+                  size="xs"
+                  onClick={() => setLoaiXNK("NK")}
+                  className={`text-xs px-2.5 py-1 ${
+                    loaiXNK === "NK"
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Nhập khẩu (NK)
+                </Button>
+                <Button
+                  variant={loaiXNK === "XK" ? "default" : "ghost"}
+                  size="xs"
+                  onClick={() => setLoaiXNK("XK")}
+                  className={`text-xs px-2.5 py-1 ${
+                    loaiXNK === "XK"
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  Xuất khẩu (XK)
+                </Button>
+              </div>
             </div>
 
-            {/* Regime Type Buttons */}
-            <div className="flex items-center bg-white dark:bg-slate-900 p-1 rounded-lg border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            {/* Action Group: AI + Print + Theme */}
+            <div className="flex items-center gap-1.5">
+              {/* AI Re-Analyze Button */}
               <Button
-                variant={loaiXNK === "ALL" ? "default" : "ghost"}
-                size="xs"
-                onClick={() => setLoaiXNK("ALL")}
-                className={`text-xs px-2.5 py-1 ${
-                  loaiXNK === "ALL"
-                    ? "bg-blue-600 text-white shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400"
-                }`}
+                variant="outline"
+                size="sm"
+                onClick={() => runAiAnalysis()}
+                disabled={aiLoading}
+                className="gap-1.5 text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-2xs"
               >
-                Toàn bộ
+                <BrainCircuit className={`size-3.5 ${aiLoading ? "animate-spin text-blue-600" : "text-blue-600 dark:text-blue-400"}`} />
+                Phân tích AI
               </Button>
+
+              {/* Native Print / PDF Button */}
               <Button
-                variant={loaiXNK === "NK" ? "default" : "ghost"}
-                size="xs"
-                onClick={() => setLoaiXNK("NK")}
-                className={`text-xs px-2.5 py-1 ${
-                  loaiXNK === "NK"
-                    ? "bg-blue-600 text-white shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400"
-                }`}
+                onClick={handleExportPDF}
+                size="sm"
+                className="gap-1.5 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-2xs"
               >
-                Nhập khẩu (NK)
+                <Printer className="size-3.5" />
+                In / Xuất PDF
               </Button>
+
+              {/* Dark / Light Mode Switcher */}
               <Button
-                variant={loaiXNK === "XK" ? "default" : "ghost"}
-                size="xs"
-                onClick={() => setLoaiXNK("XK")}
-                className={`text-xs px-2.5 py-1 ${
-                  loaiXNK === "XK"
-                    ? "bg-blue-600 text-white shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400"
-                }`}
+                variant="outline"
+                size="icon-sm"
+                onClick={toggleTheme}
+                title={isDark ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
+                className="border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
               >
-                Xuất khẩu (XK)
+                {isDark ? <Sun className="size-4 text-amber-400" /> : <Moon className="size-4 text-slate-700" />}
               </Button>
             </div>
-
-            {/* AI Re-Analyze Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => runAiAnalysis()}
-              disabled={aiLoading}
-              className="gap-1.5 text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-2xs"
-            >
-              <BrainCircuit className={`size-3.5 ${aiLoading ? "animate-spin text-blue-600" : "text-blue-600 dark:text-blue-400"}`} />
-              Phân tích AI
-            </Button>
-
-            {/* Native Print / PDF Button */}
-            <Button
-              onClick={handleExportPDF}
-              size="sm"
-              className="gap-1.5 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-2xs"
-            >
-              <Printer className="size-3.5" />
-              In / Xuất PDF
-            </Button>
-
-            {/* Dark / Light Mode Switcher */}
-            <Button
-              variant="outline"
-              size="icon-sm"
-              onClick={toggleTheme}
-              title={isDark ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
-              className="border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-            >
-              {isDark ? <Sun className="size-4 text-amber-400" /> : <Moon className="size-4 text-slate-700" />}
-            </Button>
           </div>
+        </div>
+
+        {/* Mobile Quick-Navigation Pills (visible on < lg) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 lg:hidden print:hidden">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+                  isActive
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800"
+                }`}
+              >
+                <Icon className="size-3" />
+                {item.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Smooth wrapper preserving view during background fetch */}
@@ -622,7 +635,7 @@ export default function CustomsDashboard() {
           <div id="overview" className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 md:gap-4 scroll-mt-6">
             
             {/* Total Declarations */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors">
+            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors flex flex-col justify-between">
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Tổng số tờ khai
@@ -631,8 +644,8 @@ export default function CustomsDashboard() {
                   <FileText className="size-3.5" />
                 </div>
               </CardHeader>
-              <CardContent className="px-4 pb-3.5 pt-0">
-                <div className="text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
                   {formatNumber(stats?.kpis?.totalDeclarations || 0)}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -651,7 +664,7 @@ export default function CustomsDashboard() {
             </Card>
 
             {/* Total USD Value */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-sky-400 dark:hover:border-sky-600 transition-colors">
+            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-sky-400 dark:hover:border-sky-600 transition-colors flex flex-col justify-between">
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Kim ngạch XNK
@@ -660,8 +673,8 @@ export default function CustomsDashboard() {
                   <DollarSign className="size-3.5" />
                 </div>
               </CardHeader>
-              <CardContent className="px-4 pb-3.5 pt-0">
-                <div className="text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
                   {formatUSD(stats?.kpis?.totalValueUSD || 0)}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -676,7 +689,7 @@ export default function CustomsDashboard() {
             </Card>
 
             {/* Total Tax Revenue - Disciplined Slate/Indigo */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors">
+            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors flex flex-col justify-between">
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Thuế Hải quan đã thu
@@ -685,8 +698,8 @@ export default function CustomsDashboard() {
                   <Award className="size-3.5" />
                 </div>
               </CardHeader>
-              <CardContent className="px-4 pb-3.5 pt-0">
-                <div className="text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
                   {formatVND(stats?.kpis?.totalTaxVND || 0)}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -701,7 +714,7 @@ export default function CustomsDashboard() {
             </Card>
 
             {/* Volume & Weight */}
-            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
+            <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-amber-400 dark:hover:border-amber-600 transition-colors flex flex-col justify-between">
               <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
                 <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Vận chuyển & Container
@@ -710,8 +723,8 @@ export default function CustomsDashboard() {
                   <Truck className="size-3.5" />
                 </div>
               </CardHeader>
-              <CardContent className="px-4 pb-3.5 pt-0">
-                <div className="text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
                   {formatNumber(stats?.kpis?.totalContainers || 0)}{" "}
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans">Cont</span>
                 </div>
@@ -734,6 +747,11 @@ export default function CustomsDashboard() {
               <CardHeader className="pb-2 pt-4 px-5">
                 <div className="flex items-center justify-between">
                   <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono">
+                        02 / TIẾN ĐỘ THU
+                      </span>
+                    </div>
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                       <TrendingUp className="size-4 text-blue-600" />
                       Xu hướng Kim ngạch & Thu ngân sách theo chuỗi thời gian
@@ -744,7 +762,7 @@ export default function CustomsDashboard() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="h-80 px-2 pb-3">
+              <CardContent className="h-72 sm:h-80 px-2 pb-3">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <ComposedChart data={stats?.trends || []}>
                     <defs>
@@ -893,6 +911,11 @@ export default function CustomsDashboard() {
             {/* Top Commodities (7 Columns) - Sky Blue palette avoiding Green clash */}
             <Card className="xl:col-span-7 border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs page-break-avoid min-w-0">
               <CardHeader className="pb-1 pt-4 px-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-mono">
+                    03 / HÀNG HÓA TRỌNG ĐIỂM
+                  </span>
+                </div>
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                   <Boxes className="size-4 text-sky-600" />
                   Top nhóm hàng hóa có trị giá giao dịch lớn nhất
@@ -901,7 +924,7 @@ export default function CustomsDashboard() {
                   Xếp hạng theo tổng trị giá quy đổi tiền đồng (VND)
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-80 px-2 pb-3">
+              <CardContent className="h-72 sm:h-80 px-2 pb-3">
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart
                     data={(stats?.commodities || []).slice(0, 6)}
@@ -1006,12 +1029,12 @@ export default function CustomsDashboard() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-mono">
+                        04 / BẢN TIN ĐIỀU HÀNH
+                      </span>
                       <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
                         Phiếu Thông báo Nhận định Điều hành Hải quan
                       </CardTitle>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">
-                        AI EXECUTIVE BRIEFING
-                      </span>
                     </div>
                     <CardDescription className="text-xs mt-0.5">
                       Đánh giá rủi ro tờ khai, dự báo tiến độ thu ngân sách và chỉ số vĩ mô từ mô hình Gemini
@@ -1059,6 +1082,11 @@ export default function CustomsDashboard() {
             <CardHeader className="pb-3 pt-4 px-5 border-b border-slate-100 dark:border-slate-800">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono">
+                      05 / DANH SÁCH DOANH NGHIỆP
+                    </span>
+                  </div>
                   <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                     <Globe2 className="size-4 text-blue-600" />
                     Bảng xếp hạng Top Doanh nghiệp Hoạt động Năng động nhất
@@ -1088,9 +1116,9 @@ export default function CustomsDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full text-left text-xs border-collapse min-w-[640px]">
                   <thead>
-                    <tr className="bg-slate-50/80 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800">
+                    <tr className="bg-slate-50/90 dark:bg-slate-800/60 sticky top-0 z-10 backdrop-blur-xs text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200/80 dark:border-slate-800">
                       <th className="py-3 px-4 w-14 text-center">Thứ hạng</th>
                       <th className="py-3 px-4">Mã số thuế</th>
                       <th className="py-3 px-4">Tên Doanh nghiệp</th>
