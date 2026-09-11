@@ -252,7 +252,7 @@ export default function CustomsDashboard() {
 
   const { start: startDate, end: endDate } = getDateRange(datePreset);
 
-  // Run AI analysis - INSTANT render without artificial typewriter delay
+  // Run AI analysis - Actionable administrative responses
   const runAiAnalysis = useCallback(async (currentStats?: any) => {
     const target = currentStats || stats;
     if (!target) return;
@@ -268,7 +268,11 @@ export default function CustomsDashboard() {
       setAiInsight(data.insight || "");
     } catch (error) {
       console.error("AI Analysis failed:", error);
-      setAiInsight("### Có lỗi xảy ra trong quá trình gọi API AI. Vui lòng kiểm tra kết nối mạng hoặc khoá Gemini API.");
+      setAiInsight(
+        "### Không thể kết nối với dịch vụ Phân tích AI\n" +
+        "- **Nguyên nhân:** Kết nối mạng bị gián đoạn hoặc chưa thiết lập cấu hình khóa `GEMINI_API_KEY`.\n" +
+        "- **Xử lý:** Vui lòng kiểm tra biến môi trường trong file `.env.local` hoặc nhấp lại nút **'Phân tích AI'** trên thanh công cụ để thử lại."
+      );
     } finally {
       setAiLoading(false);
     }
@@ -310,17 +314,17 @@ export default function CustomsDashboard() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Tax Breakdown Data: Clean palette avoiding Green conflict (reserved for Luồng Xanh)
+  // Tax Breakdown Data: Unambiguous domain taxonomy
   const taxPieData = useMemo(() => {
     if (!stats || !stats.taxBreakdown) return [];
     const tb = stats.taxBreakdown;
     return [
-      { name: "Thuế GTGT (VAT)", value: tb.thueV, color: "#0284C7" },
+      { name: "Thuế Giá trị gia tăng (VAT)", value: tb.thueV, color: "#0284C7" },
       { name: "Thuế Xuất Nhập Khẩu", value: tb.thueXNK, color: "#2563EB" },
-      { name: "Thuế Tiêu thụ đặc biệt", value: tb.thueT, color: "#D97706" },
-      { name: "Thuế Bảo vệ môi trường", value: tb.thueM, color: "#7C3AED" },
-      { name: "Thuế Tự vệ / Chống BPG", value: tb.thueCBPG, color: "#E11D48" },
-      { name: "Các sắc thuế khác", value: tb.thueKhac, color: "#64748B" },
+      { name: "Thuế Tiêu thụ đặc biệt (TTĐB)", value: tb.thueT, color: "#D97706" },
+      { name: "Thuế Bảo vệ môi trường (BVMT)", value: tb.thueM, color: "#7C3AED" },
+      { name: "Thuế Tự vệ & Chống bán phá giá", value: tb.thueCBPG, color: "#E11D48" },
+      { name: "Các khoản sắc thuế khác", value: tb.thueKhac, color: "#64748B" },
     ];
   }, [stats]);
 
@@ -444,13 +448,13 @@ export default function CustomsDashboard() {
                         : "bg-amber-500 animate-pulse ring-4 ring-amber-500/20"
                     }`}
                   />
-                  {dbStatus === "live" ? "SQL Server Live" : "Dữ liệu Mô phỏng"}
+                  {dbStatus === "live" ? "SQL Server Thực" : "CSDL Mô phỏng"}
                 </span>
               </div>
               <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                 {dbStatus === "live"
-                  ? "Đang truy vấn trực tiếp CSDL VNACCS_REPORT."
-                  : "Dữ liệu mẫu kiểm thử nghiệp vụ Hải quan VN."}
+                  ? "Truy vấn trực tiếp CSDL VNACCS_REPORT (bảng rpToKhai & rpHang)."
+                  : "Chưa kết nối SQL Server. Đang hiển thị dữ liệu mẫu nghiệp vụ Hải quan VN."}
               </p>
             </div>
           </div>
@@ -678,10 +682,10 @@ export default function CustomsDashboard() {
                   {formatUSD(stats?.kpis?.totalValueUSD || 0)}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Quy đổi VND:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  <span className="font-medium">Ước tính quy đổi:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300" title="Quy đổi theo tỷ giá hạch toán tạm tính 25.000 VND/USD">
                     {stats?.kpis?.totalValueUSD
-                      ? `${((stats.kpis.totalValueUSD * 25000) / 1e12).toFixed(1)}T VND`
+                      ? `${((stats.kpis.totalValueUSD * 25000) / 1e12).toFixed(1)} Tỷ VND`
                       : "0"}
                   </span>
                 </div>
@@ -703,7 +707,7 @@ export default function CustomsDashboard() {
                   {formatVND(stats?.kpis?.totalTaxVND || 0)}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Tỷ lệ thu thuế / Trị giá:</span>
+                  <span className="font-medium">Tỷ lệ động viên ngân sách:</span>
                   <span className="font-bold text-indigo-600 dark:text-indigo-400">
                     {stats?.kpis?.totalTaxVND && stats?.kpis?.totalValueUSD
                       ? `${((stats.kpis.totalTaxVND / (stats.kpis.totalValueUSD * 25000)) * 100).toFixed(2)}%`
@@ -726,12 +730,12 @@ export default function CustomsDashboard() {
               <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
                 <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
                   {formatNumber(stats?.kpis?.totalContainers || 0)}{" "}
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans">Cont</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans">TEU</span>
                 </div>
                 <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Trọng lượng hàng:</span>
+                  <span>Khối lượng tịnh:</span>
                   <span className="font-bold text-slate-700 dark:text-slate-300">
-                    {formatNumber(Math.round(stats?.kpis?.totalWeightTNE || 0))} Tấn
+                    {formatNumber(Math.round(stats?.kpis?.totalWeightTNE || 0))} Tấn (TNE)
                   </span>
                 </div>
               </CardContent>
@@ -1011,7 +1015,12 @@ export default function CustomsDashboard() {
                 <div className="p-3 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed mt-4 flex items-start gap-2">
                   <Info className="size-4 text-blue-600 shrink-0 mt-0.5" />
                   <div>
-                    <strong>Quy chuẩn thông quan:</strong> Luồng Xanh được miễn kiểm tra thực tế, giải phóng hàng tức thời. Luồng Vàng yêu cầu kiểm tra hồ sơ; Luồng Đỏ kiểm tra thực tế hàng hóa theo tiêu chí quản lý rủi ro.
+                    <strong>Căn cứ Điều 32 Luật Hải quan số 54/2014/QH13:</strong>
+                    <div className="mt-0.5 text-slate-600 dark:text-slate-300 space-y-0.5">
+                      <div>• <strong>Luồng Xanh:</strong> Miễn kiểm tra hồ sơ và hàng hóa, thông quan tự động tức thời.</div>
+                      <div>• <strong>Luồng Vàng:</strong> Kiểm tra chi tiết bộ chứng từ hải quan trước khi thông quan.</div>
+                      <div>• <strong>Luồng Đỏ:</strong> Kiểm tra chi tiết chứng từ kết hợp kiểm tra thực tế hàng hóa tại cảng/cửa khẩu.</div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -1069,8 +1078,8 @@ export default function CustomsDashboard() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2.5">
                   <BrainCircuit className="size-7 text-slate-400" />
-                  <p className="text-xs text-slate-500 font-medium">
-                    Bấm nút &quot;Phân tích AI&quot; ở thanh công cụ để tạo nhận định tự động.
+                  <p className="text-xs text-slate-500 font-medium text-center max-w-md">
+                    Chưa có bản tin nhận định cho kỳ thống kê này. Bấm nút &quot;Phân tích AI&quot; ở thanh công cụ để mô hình Gemini tổng hợp đánh giá rủi ro và dự báo thu ngân sách.
                   </p>
                 </div>
               )}
@@ -1199,8 +1208,13 @@ export default function CustomsDashboard() {
                     })}
                     {filteredEnterprises.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-500 dark:text-slate-400 text-xs">
-                          Không tìm thấy doanh nghiệp nào phù hợp với từ khóa &quot;{searchQuery}&quot;. Nhấn Esc để hủy.
+                        <td colSpan={6} className="py-10 text-center space-y-2">
+                          <p className="text-slate-600 dark:text-slate-300 font-medium text-xs">
+                            Không tìm thấy doanh nghiệp nào khớp với từ khóa &quot;<span className="font-bold text-slate-900 dark:text-white">{searchQuery}</span>&quot;.
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Vui lòng kiểm tra lại Mã số thuế hoặc Tên công ty, hoặc nhấn <kbd className="px-1.5 py-0.5 font-mono text-[10px] bg-slate-100 dark:bg-slate-800 rounded border border-slate-300 dark:border-slate-700">Esc</kbd> để xóa tìm kiếm.
+                          </p>
                         </td>
                       </tr>
                     )}
