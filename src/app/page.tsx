@@ -168,6 +168,7 @@ export default function CustomsDashboard() {
   const [aiInsight, setAiInsight] = useState<string>("");
   const [aiLoading, setAiLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedTaxId, setCopiedTaxId] = useState<string | null>(null);
 
   // Search & Table Sorting State
   const [searchQuery, setSearchQuery] = useState("");
@@ -221,45 +222,20 @@ export default function CustomsDashboard() {
     return () => observer.disconnect();
   }, []);
 
-  // Keyboard shortcuts: '/' focuses search, 'Escape' clears
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      } else if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
-        setSearchQuery("");
-        searchInputRef.current?.blur();
+  // Theme toggle with stable functional updater
+  const toggleTheme = useCallback(() => {
+    setIsDark((prev) => {
+      const next = !prev;
+      if (next) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+      return next;
+    });
   }, []);
-
-  // Theme initialize
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      setIsDark(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setIsDark(false);
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    if (isDark) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-      setIsDark(false);
-    } else {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setIsDark(true);
-    }
-  };
 
   // Preset Date Ranges
   const getDateRange = (preset: string) => {
@@ -358,6 +334,50 @@ export default function CustomsDashboard() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Copy Tax ID to clipboard with micro-feedback
+  const handleCopyTaxId = (taxId: string) => {
+    if (!taxId) return;
+    navigator.clipboard.writeText(taxId);
+    setCopiedTaxId(taxId);
+    setTimeout(() => setCopiedTaxId(null), 1800);
+  };
+
+  // Initialize theme from storage or system preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  // Power-User Keyboard shortcuts: '/' focuses search, 'Escape' clears, 'D' theme, 'P' print
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isInput = ["INPUT", "SELECT", "TEXTAREA"].includes(
+        (document.activeElement?.tagName || "").toUpperCase()
+      );
+
+      if (e.key === "/" && !isInput) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
+        setSearchQuery("");
+        searchInputRef.current?.blur();
+      } else if (!isInput && (e.key === "d" || e.key === "D")) {
+        toggleTheme();
+      } else if (!isInput && (e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey) {
+        handleExportPDF();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleTheme]);
 
   // Tax Breakdown Data: Unambiguous domain taxonomy with dedicated fiscal palette
   const taxPieData = useMemo(() => {
@@ -505,12 +525,25 @@ export default function CustomsDashboard() {
           </div>
         </div>
 
-        {/* Sidebar Footer - Professional Government Systems */}
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">VNACCS/VCIS</span>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
-            Tổng cục Hải quan
-          </span>
+        {/* Sidebar Footer - Professional Government Systems & Shortcuts HUD */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">VNACCS/VCIS</span>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+              Tổng cục Hải quan
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5 border-t border-slate-100/60 dark:border-slate-800/60">
+            <span className="flex items-center gap-1" title="Nhấn phím / để tìm doanh nghiệp">
+              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300">/</kbd> Tìm
+            </span>
+            <span className="flex items-center gap-1" title="Nhấn phím D để chuyển nền Sáng/Tối">
+              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300">D</kbd> Theme
+            </span>
+            <span className="flex items-center gap-1" title="Nhấn phím P để in báo cáo PDF">
+              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300">P</kbd> In PDF
+            </span>
+          </div>
         </div>
       </aside>
 
@@ -1105,15 +1138,24 @@ export default function CustomsDashboard() {
                     Căn cứ Điều 32 Luật Hải quan số 54/2014/QH13:
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 text-[10px] leading-tight">
-                    <div className="p-2 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-950 dark:text-emerald-200">
+                    <div
+                      title="Thời gian thông quan điện tử: Dưới 3 giây qua hệ thống VNACCS/VCIS (Điều 23 Luật Hải quan)"
+                      className="p-2 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-950 dark:text-emerald-200 cursor-help"
+                    >
                       <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-0.5">Xanh</span>
                       Miễn kiểm tra hồ sơ và hàng hóa
                     </div>
-                    <div className="p-2 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-amber-950 dark:text-amber-200">
+                    <div
+                      title="Thời gian kiểm tra hồ sơ: Không quá 02 giờ làm việc kể từ khi tiếp nhận đủ hồ sơ hải quan (Khoản 2 Điều 23 Luật Hải quan)"
+                      className="p-2 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-amber-950 dark:text-amber-200 cursor-help"
+                    >
                       <span className="font-bold text-amber-700 dark:text-amber-400 block mb-0.5">Vàng</span>
                       Kiểm tra chi tiết bộ chứng từ
                     </div>
-                    <div className="p-2 rounded-lg bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-800/40 text-rose-950 dark:text-rose-200">
+                    <div
+                      title="Thời gian kiểm tra thực tế: Không quá 08 giờ làm việc kể từ khi xuất trình đủ hàng hóa (Khoản 2 Điều 23 Luật Hải quan)"
+                      className="p-2 rounded-lg bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-800/40 text-rose-950 dark:text-rose-200 cursor-help"
+                    >
                       <span className="font-bold text-rose-700 dark:text-rose-400 block mb-0.5">Đỏ</span>
                       Kiểm tra chứng từ & thực tế hàng hóa
                     </div>
@@ -1174,7 +1216,21 @@ export default function CustomsDashboard() {
             </CardHeader>
             
             <CardContent className="pt-4 px-6 max-h-[480px] overflow-y-auto print:max-h-none print:overflow-visible">
-              {aiInsight ? (
+              {aiLoading ? (
+                <div className="py-10 px-4 flex flex-col items-center justify-center space-y-3.5 text-center">
+                  <div className="size-11 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center animate-pulse shadow-xs">
+                    <BrainCircuit className="size-5 animate-spin" />
+                  </div>
+                  <div className="space-y-1 max-w-sm">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Mô hình AI đang phân tích dữ liệu Hải quan...
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      Đang tổng hợp 6 sắc thuế, đo lường tỷ lệ phân luồng thông quan và xây dựng báo cáo nhận định điều hành.
+                    </div>
+                  </div>
+                </div>
+              ) : aiInsight ? (
                 <div className="space-y-1">{renderMarkdown(aiInsight)}</div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2.5">
@@ -1197,7 +1253,14 @@ export default function CustomsDashboard() {
                     Top Doanh nghiệp Xuất Nhập Khẩu
                   </CardTitle>
                   <CardDescription className="text-xs mt-0.5 flex flex-wrap items-center justify-between gap-1">
-                    <span>Xếp hạng theo kim ngạch quy đổi USD và số lượng container (Bấm tiêu đề để sắp xếp)</span>
+                    <span>
+                      Xếp hạng theo kim ngạch quy đổi USD và số lượng container
+                      {searchQuery.trim() && (
+                        <span className="ml-1.5 font-semibold text-blue-600 dark:text-blue-400">
+                          (Tìm thấy {filteredEnterprises.length} / {stats?.enterprises?.length || 0} doanh nghiệp)
+                        </span>
+                      )}
+                    </span>
                     <span className="inline-flex sm:hidden text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
                       Vuốt ngang xem đủ cột →
                     </span>
@@ -1336,8 +1399,21 @@ export default function CustomsDashboard() {
                               <span className="text-slate-500 dark:text-slate-400 font-mono text-xs font-semibold">#{rank}</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
-                            {ent.taxId}
+                          <td
+                            onClick={() => handleCopyTaxId(ent.taxId)}
+                            title="Bấm để sao chép Mã số thuế"
+                            className="py-3 px-4 font-mono text-[11px] whitespace-nowrap cursor-pointer group select-none"
+                          >
+                            <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <span>{ent.taxId}</span>
+                              {copiedTaxId === ent.taxId ? (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] text-emerald-700 dark:text-emerald-300 font-sans font-bold bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-300/60 dark:border-emerald-700/60 shadow-2xs">
+                                  <Check className="size-2.5 text-emerald-600 dark:text-emerald-400" /> Đã chép
+                                </span>
+                              ) : (
+                                <Copy className="size-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 group-hover:text-blue-600" />
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 max-w-[240px] sm:max-w-[320px]">
                             <div className="truncate" title={ent.name}>
@@ -1358,13 +1434,21 @@ export default function CustomsDashboard() {
                     })}
                     {filteredEnterprises.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-10 text-center space-y-2">
+                        <td colSpan={6} className="py-10 text-center space-y-2.5">
                           <p className="text-slate-600 dark:text-slate-300 font-medium text-xs">
                             Không tìm thấy doanh nghiệp nào khớp với từ khóa &quot;<span className="font-bold text-slate-900 dark:text-white">{searchQuery}</span>&quot;.
                           </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            Vui lòng kiểm tra lại Mã số thuế hoặc Tên công ty, hoặc nhấn <kbd className="px-1.5 py-0.5 font-mono text-[10px] bg-slate-100 dark:bg-slate-800 rounded border border-slate-300 dark:border-slate-700">Esc</kbd> để xóa tìm kiếm.
-                          </p>
+                          <div className="flex items-center justify-center gap-2 pt-1">
+                            <button
+                              onClick={() => {
+                                setSearchQuery("");
+                                searchInputRef.current?.focus();
+                              }}
+                              className="px-3 py-1 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 transition-colors shadow-2xs"
+                            >
+                              Xóa bộ lọc tìm kiếm
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}
