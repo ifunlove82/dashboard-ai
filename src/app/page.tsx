@@ -545,7 +545,7 @@ export default function CustomsDashboard() {
                   variant={loaiXNK === "ALL" ? "default" : "ghost"}
                   size="xs"
                   onClick={() => setLoaiXNK("ALL")}
-                  className={`text-xs px-2.5 py-1 ${
+                  className={`text-xs px-2.5 py-1 active:scale-95 transition-all duration-150 ${
                     loaiXNK === "ALL"
                       ? "bg-blue-600 text-white shadow-2xs"
                       : "text-slate-600 dark:text-slate-400"
@@ -557,7 +557,7 @@ export default function CustomsDashboard() {
                   variant={loaiXNK === "NK" ? "default" : "ghost"}
                   size="xs"
                   onClick={() => setLoaiXNK("NK")}
-                  className={`text-xs px-2.5 py-1 ${
+                  className={`text-xs px-2.5 py-1 active:scale-95 transition-all duration-150 ${
                     loaiXNK === "NK"
                       ? "bg-blue-600 text-white shadow-2xs"
                       : "text-slate-600 dark:text-slate-400"
@@ -569,7 +569,7 @@ export default function CustomsDashboard() {
                   variant={loaiXNK === "XK" ? "default" : "ghost"}
                   size="xs"
                   onClick={() => setLoaiXNK("XK")}
-                  className={`text-xs px-2.5 py-1 ${
+                  className={`text-xs px-2.5 py-1 active:scale-95 transition-all duration-150 ${
                     loaiXNK === "XK"
                       ? "bg-blue-600 text-white shadow-2xs"
                       : "text-slate-600 dark:text-slate-400"
@@ -588,7 +588,7 @@ export default function CustomsDashboard() {
                 size="sm"
                 onClick={() => runAiAnalysis()}
                 disabled={aiLoading}
-                className="gap-1.5 text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-2xs"
+                className="gap-1.5 text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-2xs active:scale-95 transition-all duration-150"
               >
                 <BrainCircuit className={`size-3.5 ${aiLoading ? "animate-spin text-blue-600" : "text-blue-600 dark:text-blue-400"}`} />
                 Phân tích AI
@@ -598,7 +598,7 @@ export default function CustomsDashboard() {
               <Button
                 onClick={handleExportPDF}
                 size="sm"
-                className="gap-1.5 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-2xs"
+                className="gap-1.5 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-2xs active:scale-95 transition-all duration-150"
               >
                 <Printer className="size-3.5" />
                 In / Xuất PDF
@@ -610,7 +610,7 @@ export default function CustomsDashboard() {
                 size="icon-sm"
                 onClick={toggleTheme}
                 title={isDark ? "Chuyển sang chế độ Sáng" : "Chuyển sang chế độ Tối"}
-                className="border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                className="border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all duration-150"
               >
                 {isDark ? <Sun className="size-4 text-amber-400" /> : <Moon className="size-4 text-slate-700" />}
               </Button>
@@ -627,7 +627,7 @@ export default function CustomsDashboard() {
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap active:scale-95 transition-all duration-150 shrink-0 ${
                   isActive
                     ? "bg-blue-600 text-white shadow-xs"
                     : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800"
@@ -874,6 +874,9 @@ export default function CustomsDashboard() {
                         fill="url(#usdGrad)"
                         stroke="#2563EB"
                         strokeWidth={2.5}
+                        isAnimationActive={true}
+                        animationDuration={600}
+                        animationEasing="ease-out"
                       />
                       <Line
                         yAxisId="right"
@@ -883,6 +886,9 @@ export default function CustomsDashboard() {
                         stroke="#4F46E5"
                         strokeWidth={2.5}
                         dot={{ r: 3.5, fill: "#4F46E5", strokeWidth: 0 }}
+                        isAnimationActive={true}
+                        animationDuration={600}
+                        animationEasing="ease-out"
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
@@ -918,6 +924,9 @@ export default function CustomsDashboard() {
                         outerRadius={78}
                         paddingAngle={3}
                         dataKey="value"
+                        isAnimationActive={true}
+                        animationDuration={600}
+                        animationEasing="ease-out"
                       >
                         {taxPieData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -1014,6 +1023,9 @@ export default function CustomsDashboard() {
                         fill="#0284C7"
                         radius={[0, 5, 5, 0]}
                         barSize={16}
+                        isAnimationActive={true}
+                        animationDuration={600}
+                        animationEasing="ease-out"
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -1062,7 +1074,7 @@ export default function CustomsDashboard() {
                         {/* Progress Bar */}
                         <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                           <div
-                            className="h-full rounded-full transition-all duration-500"
+                            className="h-full rounded-full transition-all duration-500 ease-out"
                             style={{ width: `${pct}%`, backgroundColor: item.color }}
                           />
                         </div>
@@ -1133,7 +1145,7 @@ export default function CustomsDashboard() {
                     size="xs"
                     onClick={handleCopyInsight}
                     disabled={!aiInsight}
-                    className="gap-1 text-xs border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    className="gap-1 text-xs border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 active:scale-95 transition-all duration-150"
                   >
                     {copied ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
                     {copied ? "Đã sao chép" : "Sao chép báo cáo"}
@@ -1215,31 +1227,67 @@ export default function CustomsDashboard() {
                       <th
                         onClick={() => handleSort("valueUSD")}
                         aria-label="Sắp xếp theo Kim ngạch USD"
-                        className="py-3 px-4 text-right cursor-pointer hover:text-blue-600 transition-colors select-none"
+                        className={`py-3 px-4 text-right cursor-pointer transition-colors select-none ${
+                          sortField === "valueUSD"
+                            ? "text-blue-600 dark:text-blue-400 font-black"
+                            : "hover:text-blue-600"
+                        }`}
                       >
                         <div className="flex items-center justify-end gap-1">
                           Kim ngạch (USD)
-                          <ArrowUpDown className="size-3" />
+                          <ArrowUpDown
+                            className={`size-3 transition-transform duration-200 ${
+                              sortField === "valueUSD"
+                                ? `text-blue-600 dark:text-blue-400 ${
+                                    sortOrder === "asc" ? "rotate-180" : ""
+                                  }`
+                                : "text-slate-400"
+                            }`}
+                          />
                         </div>
                       </th>
                       <th
                         onClick={() => handleSort("declarations")}
                         aria-label="Sắp xếp theo Số tờ khai"
-                        className="py-3 px-4 text-center cursor-pointer hover:text-blue-600 transition-colors select-none"
+                        className={`py-3 px-4 text-center cursor-pointer transition-colors select-none ${
+                          sortField === "declarations"
+                            ? "text-blue-600 dark:text-blue-400 font-black"
+                            : "hover:text-blue-600"
+                        }`}
                       >
                         <div className="flex items-center justify-center gap-1">
                           Số Tờ khai
-                          <ArrowUpDown className="size-3" />
+                          <ArrowUpDown
+                            className={`size-3 transition-transform duration-200 ${
+                              sortField === "declarations"
+                                ? `text-blue-600 dark:text-blue-400 ${
+                                    sortOrder === "asc" ? "rotate-180" : ""
+                                  }`
+                                : "text-slate-400"
+                            }`}
+                          />
                         </div>
                       </th>
                       <th
                         onClick={() => handleSort("containers")}
                         aria-label="Sắp xếp theo Container TEU"
-                        className="py-3 px-4 text-center cursor-pointer hover:text-blue-600 transition-colors select-none"
+                        className={`py-3 px-4 text-center cursor-pointer transition-colors select-none ${
+                          sortField === "containers"
+                            ? "text-blue-600 dark:text-blue-400 font-black"
+                            : "hover:text-blue-600"
+                        }`}
                       >
                         <div className="flex items-center justify-center gap-1">
                           Container (TEU)
-                          <ArrowUpDown className="size-3" />
+                          <ArrowUpDown
+                            className={`size-3 transition-transform duration-200 ${
+                              sortField === "containers"
+                                ? `text-blue-600 dark:text-blue-400 ${
+                                    sortOrder === "asc" ? "rotate-180" : ""
+                                  }`
+                                : "text-slate-400"
+                            }`}
+                          />
                         </div>
                       </th>
                     </tr>
