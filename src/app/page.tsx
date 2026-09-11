@@ -233,30 +233,9 @@ export default function DashboardPage() {
     fetchStats();
   }, [fetchStats]);
 
-  // Export A4 PDF via html2pdf.js or Native Print
-  const handleExportPDF = async () => {
-    if (!reportRef.current) return;
-    
-    try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      const opt = {
-        margin: 10,
-        filename: `Bao-cao-hai-quan-${datePreset}-${loaiXNK}.pdf`,
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      };
-      
-      const element = reportRef.current;
-      element.classList.add("print-pdf-mode");
-      
-      await html2pdf().set(opt as any).from(element).save();
-      
-      element.classList.remove("print-pdf-mode");
-    } catch (error) {
-      console.error("Export PDF failed, falling back to browser print:", error);
-      window.print();
-    }
+  // Export A4 PDF via Native Print (Save as PDF)
+  const handleExportPDF = () => {
+    window.print();
   };
 
   const getTaxPieData = () => {
