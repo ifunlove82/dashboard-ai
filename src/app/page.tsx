@@ -472,39 +472,36 @@ export default function CustomsDashboard() {
             })}
           </div>
 
-          {/* Database Connection Status Card */}
+          {/* Database Connection Status - Distilled & compact */}
           <div className="pt-2">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 block mb-2">
-              Nguồn dữ liệu
-            </span>
-            <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-slate-400 font-medium">Trạng thái:</span>
-                <span className="font-semibold text-xs flex items-center gap-1.5">
-                  <span
-                    className={`size-2 rounded-full ${
-                      dbStatus === "live"
-                        ? "bg-emerald-500 animate-pulse ring-4 ring-emerald-500/20"
-                        : "bg-amber-500 animate-pulse ring-4 ring-amber-500/20"
-                    }`}
-                  />
-                  {dbStatus === "live" ? "SQL Server Thực" : "CSDL Mô phỏng"}
-                </span>
-              </div>
-              <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                {dbStatus === "live"
-                  ? "Truy vấn trực tiếp CSDL VNACCS_REPORT (bảng rpToKhai & rpHang)."
-                  : "Chưa kết nối SQL Server. Đang hiển thị dữ liệu mẫu nghiệp vụ Hải quan VN."}
-              </p>
+            <div
+              className="px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs"
+              title={
+                dbStatus === "live"
+                  ? "Truy vấn trực tiếp CSDL VNACCS_REPORT (bảng rpToKhai & rpHang)"
+                  : "Chưa kết nối SQL Server. Đang hiển thị dữ liệu mẫu nghiệp vụ Hải quan VN"
+              }
+            >
+              <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">Dữ liệu:</span>
+              <span className="font-semibold text-xs flex items-center gap-1.5">
+                <span
+                  className={`size-2 rounded-full ${
+                    dbStatus === "live"
+                      ? "bg-emerald-500 animate-pulse ring-3 ring-emerald-500/20"
+                      : "bg-amber-500 animate-pulse ring-3 ring-amber-500/20"
+                  }`}
+                />
+                {dbStatus === "live" ? "SQL Server Live" : "CSDL Mô phỏng"}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Sidebar Footer - Professional Government Systems */}
         <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">Hệ thống VNACCS/VCIS</span>
+          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">VNACCS/VCIS</span>
           <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
-            Cục CNTT & Thống kê
+            Tổng cục Hải quan
           </span>
         </div>
       </aside>
@@ -515,17 +512,12 @@ export default function CustomsDashboard() {
         {/* Top Header & Filter Controls (Hidden in print) */}
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800 print:hidden">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400">
-                HỆ THỐNG ĐIỀU HÀNH & THỐNG KÊ HẢI QUAN
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                Bộ Tài chính • Tổng cục Hải quan
-              </span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Báo cáo Thống kê Hoạt động Hải quan & Kim ngạch XNK
-            </h2>
+            <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+              Thống kê Hải quan & Thương mại XNK
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Hệ thống Điều hành & Thống kê Tờ khai Hải quan điện tử VNACCS/VCIS
+            </p>
           </div>
 
           {/* Action & Filter Toolbar - Grouped cleanly */}
@@ -745,8 +737,8 @@ export default function CustomsDashboard() {
                   {formatUSD(stats?.kpis?.totalValueUSD || 0)}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Ước tính quy đổi:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300" title="Quy đổi theo tỷ giá hạch toán tạm tính 25.000 VND/USD">
+                  <span className="font-medium">Quy đổi:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300" title="Tỷ giá hạch toán 25.000 VND/USD">
                     {stats?.kpis?.totalValueUSD
                       ? `${((stats.kpis.totalValueUSD * 25000) / 1e12).toFixed(1)} Tỷ VND`
                       : "0 Tỷ VND"}
@@ -770,7 +762,7 @@ export default function CustomsDashboard() {
                   {formatVND(stats?.kpis?.totalTaxVND || 0)}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Tỷ lệ động viên ngân sách:</span>
+                  <span className="font-medium">Tỷ lệ thu thuế:</span>
                   <span className="font-bold text-indigo-600 dark:text-indigo-400">
                     {stats?.kpis?.totalTaxVND && stats?.kpis?.totalValueUSD
                       ? `${((stats.kpis.totalTaxVND / (stats.kpis.totalValueUSD * 25000)) * 100).toFixed(2)}%`
@@ -796,9 +788,9 @@ export default function CustomsDashboard() {
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans">TEU</span>
                 </div>
                 <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Khối lượng tịnh:</span>
+                  <span>Trọng lượng:</span>
                   <span className="font-bold text-slate-700 dark:text-slate-300">
-                    {formatNumber(Math.round(stats?.kpis?.totalWeightTNE || 0))} Tấn (TNE)
+                    {formatNumber(Math.round(stats?.kpis?.totalWeightTNE || 0))} TNE
                   </span>
                 </div>
               </CardContent>
@@ -816,10 +808,10 @@ export default function CustomsDashboard() {
                   <div>
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                       <TrendingUp className="size-4 text-blue-600" />
-                      Xu hướng Kim ngạch & Thu ngân sách theo chuỗi thời gian
+                      Xu hướng Kim ngạch & Thu ngân sách
                     </CardTitle>
                     <CardDescription className="text-xs mt-0.5">
-                      Tương quan giữa Kim ngạch XNK (USD) và Số thuế hải quan đã thu (VND)
+                      Chuỗi thời gian theo tháng (Kim ngạch USD & Thuế VND)
                     </CardDescription>
                   </div>
                 </div>
@@ -982,7 +974,7 @@ export default function CustomsDashboard() {
               <CardHeader className="pb-1 pt-4 px-5">
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                   <Boxes className="size-4 text-sky-600" />
-                  Top nhóm hàng hóa có trị giá giao dịch lớn nhất
+                  Nhóm Hàng hóa Trọng điểm
                 </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
                   Xếp hạng theo tổng trị giá quy đổi tiền đồng (VND)
@@ -1039,10 +1031,10 @@ export default function CustomsDashboard() {
               <CardHeader className="pb-1 pt-4 px-5">
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                   <AlertTriangle className="size-4 text-amber-500" />
-                  Tỷ lệ Phân luồng Tờ khai & Mức độ Tuân thủ
+                  Phân luồng Tờ khai & Mức độ Tuân thủ
                 </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
-                  Quản lý rủi ro thông quan tự động VNACCS/VCIS
+                  Đo lường quản lý rủi ro thông quan tự động VNACCS/VCIS
                 </CardDescription>
               </CardHeader>
               <CardContent className="px-5 pb-5 flex-1 flex flex-col justify-around">
@@ -1079,14 +1071,24 @@ export default function CustomsDashboard() {
                   })}
                 </div>
 
-                <div className="p-3 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed mt-4 flex items-start gap-2">
-                  <Info className="size-4 text-blue-600 shrink-0 mt-0.5" />
-                  <div>
-                    <strong>Căn cứ Điều 32 Luật Hải quan số 54/2014/QH13:</strong>
-                    <div className="mt-0.5 text-slate-600 dark:text-slate-300 space-y-0.5">
-                      <div>• <strong>Luồng Xanh:</strong> Miễn kiểm tra hồ sơ và hàng hóa, thông quan tự động tức thời.</div>
-                      <div>• <strong>Luồng Vàng:</strong> Kiểm tra chi tiết bộ chứng từ hải quan trước khi thông quan.</div>
-                      <div>• <strong>Luồng Đỏ:</strong> Kiểm tra chi tiết chứng từ kết hợp kiểm tra thực tế hàng hóa tại cảng/cửa khẩu.</div>
+                {/* Distilled 3-Column Statutory Micro-Grid */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] space-y-1.5 mt-2">
+                  <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+                    <Info className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    Căn cứ Điều 32 Luật Hải quan số 54/2014/QH13:
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 text-[10px] leading-tight">
+                    <div className="p-2 rounded-lg bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 block mb-0.5">Xanh</span>
+                      Miễn kiểm tra hồ sơ và hàng hóa
+                    </div>
+                    <div className="p-2 rounded-lg bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="font-bold text-amber-600 dark:text-amber-400 block mb-0.5">Vàng</span>
+                      Kiểm tra chi tiết bộ chứng từ
+                    </div>
+                    <div className="p-2 rounded-lg bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="font-bold text-rose-600 dark:text-rose-400 block mb-0.5">Đỏ</span>
+                      Kiểm tra chứng từ & thực tế hàng hóa
                     </div>
                   </div>
                 </div>
@@ -1111,10 +1113,10 @@ export default function CustomsDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
-                      Phiếu Thông báo Nhận định Điều hành Hải quan
+                      Nhận định Điều hành Hải quan
                     </CardTitle>
                     <CardDescription className="text-xs mt-0.5">
-                      Đánh giá rủi ro tờ khai, dự báo tiến độ thu ngân sách và chỉ số vĩ mô từ mô hình Gemini
+                      Đánh giá rủi ro thông quan và dự báo tiến độ thu ngân sách từ mô hình Gemini
                     </CardDescription>
                   </div>
                 </div>
@@ -1161,10 +1163,10 @@ export default function CustomsDashboard() {
                 <div>
                   <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                     <Globe2 className="size-4 text-blue-600" />
-                    Bảng xếp hạng Top Doanh nghiệp Hoạt động Năng động nhất
+                    Top Doanh nghiệp Xuất Nhập Khẩu
                   </CardTitle>
                   <CardDescription className="text-xs mt-0.5 flex flex-wrap items-center justify-between gap-1">
-                    <span>Thống kê theo tổng kim ngạch quy đổi USD và số lượng container (Bấm tiêu đề để sắp xếp)</span>
+                    <span>Xếp hạng theo kim ngạch quy đổi USD và số lượng container (Bấm tiêu đề để sắp xếp)</span>
                     <span className="inline-flex sm:hidden text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
                       Vuốt ngang xem đủ cột →
                     </span>
