@@ -53,8 +53,14 @@ Tổng số thuế thu được đạt **${formattedTaxVND} nghìn tỷ VND**. C
 }
 
 export async function POST(request: NextRequest) {
+  let body: any;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch (parseError: any) {
+    return NextResponse.json({ error: 'Invalid JSON body: ' + parseError.message }, { status: 400 });
+  }
+
+  try {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey === '') {
@@ -83,27 +89,27 @@ Yêu cầu báo cáo:
 
 DỮ LIỆU THỐNG KÊ CHI TIẾT:
 - Các chỉ số KPI chính:
-  + Tổng số tờ khai: ${body.kpis.totalDeclarations.toLocaleString()}
-  + Tổng kim ngạch xuất nhập khẩu: ${body.kpis.totalValueUSD.toLocaleString()} USD
-  + Tổng số lượng container: ${body.kpis.totalContainers.toLocaleString()}
-  + Tổng trọng lượng hàng hóa: ${body.kpis.totalWeightTNE.toLocaleString()} tấn
-  + Tổng số thuế thu được: ${body.kpis.totalTaxVND.toLocaleString()} VND
+  + Tổng số tờ khai: ${body.kpis?.totalDeclarations?.toLocaleString() || 0}
+  + Tổng kim ngạch xuất nhập khẩu: ${body.kpis?.totalValueUSD?.toLocaleString() || 0} USD
+  + Tổng số lượng container: ${body.kpis?.totalContainers?.toLocaleString() || 0}
+  + Tổng trọng lượng hàng hóa: ${body.kpis?.totalWeightTNE?.toLocaleString() || 0} tấn
+  + Tổng số thuế thu được: ${body.kpis?.totalTaxVND?.toLocaleString() || 0} VND
 - Cơ cấu chi tiết thuế thu được (VND):
-  + Thuế xuất nhập khẩu (thueXNK): ${body.taxBreakdown.thueXNK.toLocaleString()}
-  + Thuế VAT (thueV): ${body.taxBreakdown.thueV.toLocaleString()}
-  + Thuế tiêu thụ đặc biệt (thueT): ${body.taxBreakdown.thueT.toLocaleString()}
-  + Thuế bảo vệ môi trường (thueM): ${body.taxBreakdown.thueM.toLocaleString()}
-  + Thuế tự vệ/chống bán phá giá (thueB): ${body.taxBreakdown.thueB.toLocaleString()}
-  + Thuế khác (thueG): ${body.taxBreakdown.thueG.toLocaleString()}
-  + Thuế thu khác ngoài hàng hóa (thueKhac): ${body.taxBreakdown.thueKhac.toLocaleString()}
+  + Thuế xuất nhập khẩu (thueXNK): ${body.taxBreakdown?.thueXNK?.toLocaleString() || 0}
+  + Thuế VAT (thueV): ${body.taxBreakdown?.thueV?.toLocaleString() || 0}
+  + Thuế tiêu thụ đặc biệt (thueT): ${body.taxBreakdown?.thueT?.toLocaleString() || 0}
+  + Thuế bảo vệ môi trường (thueM): ${body.taxBreakdown?.thueM?.toLocaleString() || 0}
+  + Thuế tự vệ/chống bán phá giá (thueB): ${body.taxBreakdown?.thueB?.toLocaleString() || 0}
+  + Thuế khác (thueG): ${body.taxBreakdown?.thueG?.toLocaleString() || 0}
+  + Thuế thu khác ngoài hàng hóa (thueKhac): ${body.taxBreakdown?.thueKhac?.toLocaleString() || 0}
 - Nhóm hàng hóa hàng đầu giao dịch:
-  ${JSON.stringify(body.commodities.slice(0, 5))}
+  ${JSON.stringify(body.commodities?.slice(0, 5) || [])}
 - Đối tác quốc tế lớn nhất:
-  ${JSON.stringify(body.countries.slice(0, 5))}
+  ${JSON.stringify(body.countries?.slice(0, 5) || [])}
 - Doanh nghiệp hoạt động lớn nhất:
-  ${JSON.stringify(body.enterprises.slice(0, 5))}
+  ${JSON.stringify(body.enterprises?.slice(0, 5) || [])}
 - Phân bổ phân luồng tờ khai hải quan:
-  ${JSON.stringify(body.channels)}
+  ${JSON.stringify(body.channels || [])}
 
 Hãy trình bày nhận định của bạn ngay lập tức dưới dạng văn bản Markdown chuẩn tiếng Việt. Không thêm các lời chào hỏi đầu đuôi của trợ lý AI.
 `;
@@ -117,13 +123,8 @@ Hãy trình bày nhận định của bạn ngay lập tức dưới dạng văn
 
   } catch (error: any) {
     console.error('Gemini API call failed, using local fallback. Error:', error);
-    try {
-      const body = await request.clone().json();
-      return NextResponse.json({ 
-        insight: `### BÁO CÁO NHẬN ĐỊNH HẢI QUAN (FALLBACK)\n\n*Lỗi kết nối API Gemini: ${error.message || error}*\n\n` + generateLocalInsight(body) 
-      });
-    } catch (e) {
-      return NextResponse.json({ error: 'Failed to process request: ' + error.message }, { status: 500 });
-    }
+    return NextResponse.json({ 
+      insight: `### BÁO CÁO NHẬN ĐỊNH HẢI QUAN (DỰ PHÒNG)\n\n*Lưu ý: Không thể kết nối API Gemini (${error.message || error}). Đã chuyển sang phân tích tự động cục bộ.*\n\n` + generateLocalInsight(body) 
+    });
   }
 }

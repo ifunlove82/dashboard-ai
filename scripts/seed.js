@@ -196,8 +196,9 @@ async function main() {
 
         const totalTax = thueXNK + thueV + thueT + thueM + thueB + thueG;
 
+        const itemId = crypto.randomUUID();
         const itemRequest = pool.request();
-        itemRequest.input('ID', sql.UniqueIdentifier, id);
+        itemRequest.input('ID', sql.UniqueIdentifier, itemId);
         itemRequest.input('Ngay_dang_ky', sql.Date, dateStr);
         itemRequest.input('Loai_XNK', sql.NChar(4), loaiXNK);
         itemRequest.input('Nhom_hang', sql.NVarChar(50), comm.name);

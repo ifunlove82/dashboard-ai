@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -10,14 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AreaChart,
   Area,
   BarChart,
   Bar,
@@ -47,8 +39,21 @@ import {
   RefreshCw,
   Award,
   Globe2,
-  Database,
 } from "lucide-react";
+
+// Helper for inline bold parsing
+function renderInline(text: string) {
+  const parts = text.split("**");
+  return parts.map((part, pIdx) =>
+    pIdx % 2 === 1 ? (
+      <strong key={pIdx} className="font-semibold text-slate-900 dark:text-slate-100">
+        {part}
+      </strong>
+    ) : (
+      part
+    )
+  );
+}
 
 // Helper for simple custom markdown rendering
 function renderMarkdown(text: string) {
@@ -72,7 +77,7 @@ function renderMarkdown(text: string) {
     if (trimmed.startsWith("- ")) {
       return (
         <li key={idx} className="ml-6 list-disc mb-1 text-slate-600 dark:text-slate-400">
-          {trimmed.replace("- ", "")}
+          {renderInline(trimmed.replace("- ", ""))}
         </li>
       );
     }
@@ -94,18 +99,9 @@ function renderMarkdown(text: string) {
       return <hr key={idx} className="my-4 border-slate-200 dark:border-slate-800" />;
     }
     if (trimmed) {
-      const parts = trimmed.split("**");
       return (
         <p key={idx} className="my-1.5 text-slate-600 dark:text-slate-400 leading-relaxed text-sm">
-          {parts.map((part, pIdx) =>
-            pIdx % 2 === 1 ? (
-              <strong key={pIdx} className="font-semibold text-slate-900 dark:text-slate-100">
-                {part}
-              </strong>
-            ) : (
-              part
-            )
-          )}
+          {renderInline(trimmed)}
         </p>
       );
     }
@@ -144,6 +140,7 @@ export default function DashboardPage() {
   const [dbStatus, setDbStatus] = useState<"connecting" | "live" | "fallback">("connecting");
 
   const reportRef = useRef<HTMLDivElement>(null);
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Determine actual dates based on preset
   const getDateRange = (preset: string) => {
@@ -160,70 +157,83 @@ export default function DashboardPage() {
 
   const { start: startDate, end: endDate } = getDateRange(datePreset);
 
-  const fetchStats = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/stats?startDate=${startDate}&endDate=${endDate}&loaiXNK=${loaiXNK}`
-      );
-      const data = await res.json();
-      setStats(data);
-      
-      // Determine if db is connected (just a heuristic based on whether it falls back or if we got data)
-      // If we had database connection error, it falls back to mock data
-      setDbStatus(data.isMock ? "fallback" : "live");
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-      setDbStatus("fallback");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Clear typing interval on unmount
   useEffect(() => {
-    fetchStats();
-  }, [loaiXNK, datePreset]);
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+      }
+    };
+  }, []);
 
-  // Run AI analysis
-  const runAiAnalysis = async () => {
-    if (!stats) return;
+  // Run AI analysis with optional target dataset
+  const runAiAnalysis = useCallback(async (currentStats?: any) => {
+    const target = currentStats || stats;
+    if (!target) return;
+
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+
     setAiLoading(true);
     setAiInsight("");
     try {
       const res = await fetch("/api/ai-insight", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(stats),
+        body: JSON.stringify(target),
       });
       const data = await res.json();
-      
-      // Implement typing effect for AI response
-      const fullText = data.insight;
+      const fullText = data.insight || "";
+
       let currentIdx = 0;
-      const interval = setInterval(() => {
-        setAiInsight(fullText.substring(0, currentIdx + 3));
-        currentIdx += 3;
+      const step = 8;
+      typingIntervalRef.current = setInterval(() => {
+        currentIdx += step;
         if (currentIdx >= fullText.length) {
-          clearInterval(interval);
+          if (typingIntervalRef.current) {
+            clearInterval(typingIntervalRef.current);
+            typingIntervalRef.current = null;
+          }
           setAiInsight(fullText);
+        } else {
+          setAiInsight(fullText.substring(0, currentIdx));
         }
-      }, 5);
+      }, 30);
     } catch (error) {
       console.error("AI Analysis failed:", error);
       setAiInsight("### Có lỗi xảy ra trong quá trình gọi API AI. Vui lòng kiểm tra kết nối mạng hoặc khoá Gemini API.");
     } finally {
       setAiLoading(false);
     }
-  };
-
-  // Run AI analysis automatically when stats are first loaded
-  useEffect(() => {
-    if (stats && !aiInsight && !aiLoading) {
-      runAiAnalysis();
-    }
   }, [stats]);
 
-  // Export A4 PDF
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setAiInsight(""); // Clear previous insight when filter criteria change
+    try {
+      const res = await fetch(
+        `/api/stats?startDate=${startDate}&endDate=${endDate}&loaiXNK=${loaiXNK}`
+      );
+      const data = await res.json();
+      setStats(data);
+      setDbStatus(data.isMock ? "fallback" : "live");
+      // Trigger fresh analysis automatically on new data
+      runAiAnalysis(data);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      setDbStatus("fallback");
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate, loaiXNK, runAiAnalysis]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  // Export A4 PDF via html2pdf.js or Native Print
   const handleExportPDF = async () => {
     if (!reportRef.current) return;
     
@@ -237,7 +247,6 @@ export default function DashboardPage() {
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       };
       
-      // Temporarily add print class to report wrapper to adjust styles for export
       const element = reportRef.current;
       element.classList.add("print-pdf-mode");
       
@@ -245,7 +254,8 @@ export default function DashboardPage() {
       
       element.classList.remove("print-pdf-mode");
     } catch (error) {
-      console.error("Export PDF failed:", error);
+      console.error("Export PDF failed, falling back to browser print:", error);
+      window.print();
     }
   };
 
@@ -411,8 +421,8 @@ export default function DashboardPage() {
           /* Report Document Wrapper (Print Target) */
           <div ref={reportRef} id="report-container" className="space-y-6">
             
-            {/* Header visible ONLY in PDF export */}
-            <div className="hidden print:block pb-4 border-b border-slate-300">
+            {/* Header visible in PDF export & Print */}
+            <div className="pdf-report-header pb-4 border-b border-slate-300">
               <div className="flex justify-between items-center">
                 <div>
                   <h1 className="text-2xl font-bold text-slate-950">BÁO CÁO THỐNG KÊ HOẠT ĐỘNG HẢI QUAN & XNK</h1>
@@ -681,7 +691,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-10 space-y-3">
                     <Sparkles className="size-10 text-indigo-300 dark:text-indigo-800 animate-bounce" />
-                    <p className="text-xs text-slate-400 font-medium">Bấm nút "Phân tích AI" ở góc trên để bắt đầu nhận định tự động.</p>
+                    <p className="text-xs text-slate-400 font-medium">Bấm nút &quot;Phân tích AI&quot; ở góc trên để bắt đầu nhận định tự động.</p>
                   </div>
                 )}
               </CardContent>
@@ -733,17 +743,28 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {/* Global CSS style for PDF generation print layout */}
+      {/* Global CSS style for PDF generation and print layout */}
       <style jsx global>{`
+        .pdf-report-header {
+          display: none;
+        }
+        .print-pdf-mode {
+          padding: 12px !important;
+          margin: 0 auto !important;
+          max-width: 210mm !important;
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+        }
+        .print-pdf-mode .pdf-report-header {
+          display: block !important;
+        }
         @media print {
           body {
             background: white !important;
             color: black !important;
           }
-          .print-pdf-mode {
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 210mm !important;
+          .pdf-report-header {
+            display: block !important;
           }
           .page-break-avoid {
             page-break-inside: avoid !important;

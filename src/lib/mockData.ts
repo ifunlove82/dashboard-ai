@@ -1,4 +1,5 @@
 export interface DashboardData {
+  isMock: boolean;
   kpis: {
     totalDeclarations: number;
     totalValueUSD: number;
@@ -54,6 +55,7 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
   // Calculate difference in months to generate trends
   const months: string[] = [];
   const current = new Date(start);
+  current.setDate(1);
   while (current <= end) {
     const monthStr = current.toLocaleString('default', { month: '2-digit' }) + '/' + current.getFullYear();
     if (!months.includes(monthStr)) {
@@ -152,6 +154,7 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
   ].sort((a, b) => b.valueUSD - a.valueUSD);
 
   return {
+    isMock: true,
     kpis: {
       totalDeclarations,
       totalValueUSD,

@@ -17,26 +17,42 @@ const config: sql.config = {
   },
 };
 
-let poolPromise: Promise<sql.ConnectionPool> | null = null;
+interface GlobalWithSql {
+  _sqlPool?: sql.ConnectionPool | null;
+  _sqlPromise?: Promise<sql.ConnectionPool> | null;
+}
+
+const g = globalThis as unknown as GlobalWithSql;
 
 export async function getDbConnection(): Promise<sql.ConnectionPool> {
-  if (poolPromise) {
-    return poolPromise;
+  if (g._sqlPool && g._sqlPool.connected) {
+    return g._sqlPool;
   }
 
-  poolPromise = new sql.ConnectionPool(config)
+  if (g._sqlPromise) {
+    return g._sqlPromise;
+  }
+
+  g._sqlPromise = new sql.ConnectionPool(config)
     .connect()
     .then((pool) => {
       console.log('Connected to SQL Server successfully');
+      g._sqlPool = pool;
+      pool.on('error', (err) => {
+        console.error('SQL Server pool error:', err);
+        g._sqlPool = null;
+        g._sqlPromise = null;
+      });
       return pool;
     })
     .catch((err) => {
       console.error('SQL Server connection failed: ', err);
-      poolPromise = null;
+      g._sqlPool = null;
+      g._sqlPromise = null;
       throw err;
     });
 
-  return poolPromise;
+  return g._sqlPromise;
 }
 
 export { sql };
