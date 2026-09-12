@@ -1,0 +1,831 @@
+9812b57 feat(db): expand schema for URD tracking requirements
+
+ Table.sql           |  62 ++++++++++  scripts/seed.js     | 202 +++++++++++++++++++++++++++++----  src/lib/mockData.ts | 319 +++++++++++++++++++++++++++++++++++++++++++++++++++-  3 files changed, 559 insertions(+), 24 deletions(-)
+
+diff --git a/Table.sql b/Table.sql
+index b1fe30a..43b5aec 100644
+--- a/Table.sql
++++ b/Table.sql
+@@ -65,10 +65,15 @@ CREATE TABLE [dbo].[rpToKhai](
+ 	[Dia_diem_giam_sat] [nvarchar](20) NULL,
+ 	[So_luong_cont] [int] NULL,
+ 	[Tong_trong_luong_TNE] [numeric](38, 2) NULL,
+ 	[Kim_ngach_USD] [numeric](38, 2) NULL,
+ 	[Tong_thue_thu_khac_VND] [numeric](38, 2) NULL,
++	[Trong_Thong_Ke] [bit] NULL,
++	[Thoi_diem_dang_ky] [datetime] NULL,
++	[Thoi_diem_phan_luong] [datetime] NULL,
++	[Thoi_diem_thong_quan] [datetime] NULL,
++	[Ma_Cong_Chuc] [varchar](50) NULL,
+  CONSTRAINT [PK_rpToKhai] PRIMARY KEY CLUSTERED 
+ (
+ 	[ID] ASC,
+ 	[Ngay_dang_ky] ASC
+ )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+@@ -77,14 +82,71 @@ CREATE TABLE [dbo].[rpToKhai](
+ GO
+ 
+ SET ANSI_PADDING OFF
+ GO
+ 
++/****** Object:  Table [dbo].[rpPhiCSHT] ******/
++SET ANSI_NULLS ON
++GO
++
++SET QUOTED_IDENTIFIER ON
++GO
++
++CREATE TABLE [dbo].[rpPhiCSHT](
++	[ID] [uniqueidentifier] NOT NULL,
++	[Ngay_dang_ky] [date] NOT NULL,
++	[So_tien] [numeric](38, 2) NULL,
++	[Ma_HQ] [char](4) NULL,
++	[Loai_XNK] [nvarchar](4) NULL,
++	[Ma_DN_XNK] [varchar](20) NULL,
++	[Loai_hang] [nvarchar](50) NULL,
++ CONSTRAINT [PK_rpPhiCSHT] PRIMARY KEY CLUSTERED 
++(
++	[ID] ASC,
++	[Ngay_dang_ky] ASC
++)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
++)
++GO
++
++/****** Object:  Table [dbo].[rpHieuSuatCongChuc] ******/
++SET ANSI_NULLS ON
++GO
++
++SET QUOTED_IDENTIFIER ON
++GO
++
++CREATE TABLE [dbo].[rpHieuSuatCongChuc](
++	[ID] [uniqueidentifier] NOT NULL,
++	[Ma_Cong_Chuc] [varchar](50) NOT NULL,
++	[Ngay] [date] NOT NULL,
++	[To_khai_xanh] [int] NULL,
++	[To_khai_vang] [int] NULL,
++	[To_khai_do] [int] NULL,
++	[Vi_pham] [int] NULL,
++	[Thoi_gian_xu_ly_tb_phut] [numeric](10, 2) NULL,
++ CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED 
++(
++	[ID] ASC,
++	[Ngay] ASC
++)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
++)
++GO
++
+ ALTER TABLE [dbo].[rpHang] ADD  CONSTRAINT [DF_rpHang_ID]  DEFAULT (newsequentialid()) FOR [ID]
+ GO
+ 
+ ALTER TABLE [dbo].[rpHang] ADD  CONSTRAINT [DF_Table_1_TimeStamp]  DEFAULT (getdate()) FOR [Ngay_nhap_may]
+ GO
+ 
+ ALTER TABLE [dbo].[rpToKhai] ADD  CONSTRAINT [DF_rpToKhai_ID]  DEFAULT (newsequentialid()) FOR [ID]
+ GO
+ 
++ALTER TABLE [dbo].[rpToKhai] ADD  CONSTRAINT [DF_rpToKhai_Trong_Thong_Ke]  DEFAULT ((1)) FOR [Trong_Thong_Ke]
++GO
++
++ALTER TABLE [dbo].[rpPhiCSHT] ADD  CONSTRAINT [DF_rpPhiCSHT_ID]  DEFAULT (newsequentialid()) FOR [ID]
++GO
++
++ALTER TABLE [dbo].[rpHieuSuatCongChuc] ADD  CONSTRAINT [DF_rpHieuSuatCongChuc_ID]  DEFAULT (newsequentialid()) FOR [ID]
++GO
++
++
+diff --git a/scripts/seed.js b/scripts/seed.js
+index 02e7b13..25b05db 100644
+--- a/scripts/seed.js
++++ b/scripts/seed.js
+@@ -72,75 +72,175 @@ const COUNTRIES = [
+ ];
+ 
+ const CUSTOMS_BRANCHES = ['01AB', '02CI', '03EE', '43NG', '51CD'];
+ const REGIMES = ['A11', 'A12', 'B11', 'E31', 'G11', 'H11'];
+ const STREAM_CHANNELS = ['Xanh', 'V+·ng', '-…ﬂ+≈'];
++const CARGO_TYPES = ['Container', 'H+·ng rﬂ+•i', 'H+·ng lﬂ+≈ng'];
++
++const OFFICERS = [
++  { code: 'CC01', name: 'Nguyﬂ+‡n V-‚n An' },
++  { code: 'CC02', name: 'Trﬂ¶∫n Thﬂ+Ô B+ºnh' },
++  { code: 'CC03', name: 'L+¨ Ho+·ng C¶¶ﬂ+•ng' },
++  { code: 'CC04', name: 'Phﬂ¶Ìm Minh -…ﬂ+¨c' },
++  { code: 'CC05', name: 'Ho+·ng Thﬂ+Ô Mai' },
++  { code: 'CC06', name: 'V+¨ Quﬂ+Êc H+¶ng' },
++  { code: 'CC07', name: '-…ﬂ+˘ B+°ch Ngﬂ+Ïc' },
++  { code: 'CC08', name: 'Ng+¶ Tuﬂ¶—n Anh' }
++];
+ 
+ async function main() {
+   console.log(`Connecting to SQL Server: ${config.server}:${config.port}, DB: ${config.database}...`);
+   let pool;
+   try {
+     pool = await sql.connect(config);
+     console.log('Database connected successfully!');
+     
+     // Check if tables exist
+-    console.log('Checking if tables exist...');
++    console.log('Checking database tables and schema...');
+     const tableCheck = await pool.request().query(`
+       SELECT OBJECT_ID('dbo.rpToKhai', 'U') AS toKhaiExists,
+-             OBJECT_ID('dbo.rpHang', 'U') AS hangExists
++             OBJECT_ID('dbo.rpHang', 'U') AS hangExists,
++             OBJECT_ID('dbo.rpPhiCSHT', 'U') AS phiCSHTExists,
++             OBJECT_ID('dbo.rpHieuSuatCongChuc', 'U') AS hieuSuatExists
+     `);
+     
+-    const { toKhaiExists, hangExists } = tableCheck.recordset[0];
++    const { toKhaiExists, hangExists, phiCSHTExists, hieuSuatExists } = tableCheck.recordset[0];
+     
+     if (!toKhaiExists || !hangExists) {
+-      console.log('Tables do not exist! Running Table.sql schema initialization first...');
++      console.log('Core tables do not exist! Running Table.sql schema initialization first...');
+       const schemaSql = fs.readFileSync(path.join(__dirname, '../Table.sql'), 'utf8');
+       
+-      // Split script by GO statement (case insensitive)
+       const commands = schemaSql.split(/\bGO\b/i);
+-      
+       for (const cmd of commands) {
+         const trimmed = cmd.trim();
+         if (trimmed && !trimmed.startsWith('USE')) {
+-          await pool.request().query(trimmed);
++          try {
++            await pool.request().query(trimmed);
++          } catch (e) {
++            console.warn('Schema statement warning:', e.message);
++          }
+         }
+       }
+       console.log('Tables created successfully from Table.sql.');
+     } else {
+-      console.log('Tables rpToKhai and rpHang already exist.');
++      console.log('Core tables exist. Ensuring new columns and tables are created...');
++      
++      // Check for Trong_Thong_Ke column on rpToKhai
++      const colCheck = await pool.request().query(`
++        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
++        WHERE TABLE_NAME = 'rpToKhai' AND COLUMN_NAME = 'Trong_Thong_Ke'
++      `);
++      if (colCheck.recordset.length === 0) {
++        console.log('Adding missing tracking columns to rpToKhai...');
++        await pool.request().query(`
++          ALTER TABLE rpToKhai ADD 
++            Trong_Thong_Ke bit NULL DEFAULT 1,
++            Thoi_diem_dang_ky datetime NULL,
++            Thoi_diem_phan_luong datetime NULL,
++            Thoi_diem_thong_quan datetime NULL,
++            Ma_Cong_Chuc varchar(50) NULL;
++        `);
++      }
++
++      // Check for rpPhiCSHT
++      if (!phiCSHTExists) {
++        console.log('Creating rpPhiCSHT table...');
++        await pool.request().query(`
++          CREATE TABLE [dbo].[rpPhiCSHT](
++            [ID] [uniqueidentifier] NOT NULL DEFAULT (newsequentialid()),
++            [Ngay_dang_ky] [date] NOT NULL,
++            [So_tien] [numeric](38, 2) NULL,
++            [Ma_HQ] [char](4) NULL,
++            [Loai_XNK] [nvarchar](4) NULL,
++            [Ma_DN_XNK] [varchar](20) NULL,
++            [Loai_hang] [nvarchar](50) NULL,
++            CONSTRAINT [PK_rpPhiCSHT] PRIMARY KEY CLUSTERED ([ID] ASC, [Ngay_dang_ky] ASC)
++          );
++        `);
++      }
++
++      // Check for rpHieuSuatCongChuc
++      if (!hieuSuatExists) {
++        console.log('Creating rpHieuSuatCongChuc table...');
++        await pool.request().query(`
++          CREATE TABLE [dbo].[rpHieuSuatCongChuc](
++            [ID] [uniqueidentifier] NOT NULL DEFAULT (newsequentialid()),
++            [Ma_Cong_Chuc] [varchar](50) NOT NULL,
++            [Ngay] [date] NOT NULL,
++            [To_khai_xanh] [int] NULL,
++            [To_khai_vang] [int] NULL,
++            [To_khai_do] [int] NULL,
++            [Vi_pham] [int] NULL,
++            [Thoi_gian_xu_ly_tb_phut] [numeric](10, 2) NULL,
++            CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED ([ID] ASC, [Ngay] ASC)
++          );
++        `);
++      }
+     }
+ 
+-    console.log('Clearing existing data from rpToKhai and rpHang to start fresh...');
+-    await pool.request().query('DELETE FROM rpHang; DELETE FROM rpToKhai;');
++    console.log('Clearing existing data from all tables to start fresh...');
++    await pool.request().query(`
++      DELETE FROM rpHang; 
++      DELETE FROM rpToKhai;
++      IF OBJECT_ID('dbo.rpPhiCSHT', 'U') IS NOT NULL DELETE FROM rpPhiCSHT;
++      IF OBJECT_ID('dbo.rpHieuSuatCongChuc', 'U') IS NOT NULL DELETE FROM rpHieuSuatCongChuc;
++    `);
+     console.log('Cleared tables.');
+ 
+-    console.log('Generating seed data (approx. 200 records)...');
++    console.log('Generating seed data (approx. 200 declarations, items, and infrastructure fees)...');
+     
+     const startDate = new Date('2026-01-01');
+     const endDate = new Date('2026-06-08');
+     const recordsToCreate = 200;
++    const generatedDates = new Set();
+ 
+     for (let i = 0; i < recordsToCreate; i++) {
+       // Calculate random date
+       const timeDiff = endDate.getTime() - startDate.getTime();
+       const randomTime = startDate.getTime() + Math.random() * timeDiff;
+       const date = new Date(randomTime);
+       const dateStr = date.toISOString().slice(0, 10);
++      generatedDates.add(dateStr);
+       
+       const id = crypto.randomUUID();
+       const isImport = Math.random() > 0.45; // 55% Imports, 45% Exports
+       const loaiXNK = isImport ? 'NK' : 'XK';
+       
+       const ent = ENTERPRISES[Math.floor(Math.random() * ENTERPRISES.length)];
+       const country = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
+       const branch = CUSTOMS_BRANCHES[Math.floor(Math.random() * CUSTOMS_BRANCHES.length)];
+       const regime = REGIMES[Math.floor(Math.random() * REGIMES.length)];
++      const officer = OFFICERS[Math.floor(Math.random() * OFFICERS.length)];
+       
+       // Determine stream (Xanh 65%, Vang 30%, Do 5%)
+       const randStream = Math.random();
+       const stream = randStream < 0.65 ? 'Xanh' : (randStream < 0.95 ? 'V+·ng' : '-…ﬂ+≈');
+ 
++      // Statistical trade flag (92% in stats, 8% non-statistical)
++      const trongThongKe = Math.random() < 0.92 ? 1 : 0;
++
++      // Registration timestamp (08:00 - 16:30)
++      const regHours = 8 + Math.floor(Math.random() * 8);
++      const regMins = Math.floor(Math.random() * 60);
++      const regSecs = Math.floor(Math.random() * 60);
++      const regTime = new Date(date);
++      regTime.setHours(regHours, regMins, regSecs, 0);
++
++      // Routing timestamp (1 - 5 mins after registration)
++      const routeTime = new Date(regTime.getTime() + (1 + Math.floor(Math.random() * 5)) * 60 * 1000);
++
++      // Clearance timestamp based on channel
++      let leadMinutes = 5;
++      if (stream === 'Xanh') {
++        leadMinutes = 1 + Math.floor(Math.random() * 10); // 1-10 mins
++      } else if (stream === 'V+·ng') {
++        leadMinutes = 15 + Math.floor(Math.random() * 75); // 15-90 mins
++      } else {
++        leadMinutes = 120 + Math.floor(Math.random() * 360); // 2-8 hours
++      }
++      const clearTime = new Date(routeTime.getTime() + leadMinutes * 60 * 1000);
++
+       const qtyCont = Math.floor(Math.random() * 8) + 1; // 1-8 containers
+       const weight = Math.round((qtyCont * (5 + Math.random() * 15)) * 100) / 100; // 5-20 tons per cont
+       const valUSD = Math.round((weight * (1500 + Math.random() * 4000)) * 100) / 100; // 1500-5500 USD per ton
+       
+       // Insert to rpToKhai
+@@ -157,21 +257,49 @@ async function main() {
+       toKhaiRequest.input('Nuoc_XNK', sql.NVarChar(50), country.name);
+       toKhaiRequest.input('Dia_diem_giam_sat', sql.NVarChar(20), 'Cﬂ¶ÛNG Hﬂ¶ÛI PH+∆NG');
+       toKhaiRequest.input('So_luong_cont', sql.Int, qtyCont);
+       toKhaiRequest.input('Tong_trong_luong_TNE', sql.Numeric(38, 2), weight);
+       toKhaiRequest.input('Kim_ngach_USD', sql.Numeric(38, 2), valUSD);
+-      toKhaiRequest.input('Tong_thue_thu_khac_VND', sql.Numeric(38, 2), Math.round(valUSD * 250 * Math.random())); // Small other tax
++      toKhaiRequest.input('Tong_thue_thu_khac_VND', sql.Numeric(38, 2), Math.round(valUSD * 250 * Math.random()));
++      toKhaiRequest.input('Trong_Thong_Ke', sql.Bit, trongThongKe);
++      toKhaiRequest.input('Thoi_diem_dang_ky', sql.DateTime, regTime);
++      toKhaiRequest.input('Thoi_diem_phan_luong', sql.DateTime, routeTime);
++      toKhaiRequest.input('Thoi_diem_thong_quan', sql.DateTime, clearTime);
++      toKhaiRequest.input('Ma_Cong_Chuc', sql.VarChar(50), officer.code);
+ 
+       await toKhaiRequest.query(`
+         INSERT INTO rpToKhai (
+           ID, Ngay_dang_ky, Tong_to_khai, Ma_HQ, Ma_LH, Ma_DN_XNK, Ten_DN_XNK, 
+           Luong, Loai_XNK, Nuoc_XNK, Dia_diem_giam_sat, So_luong_cont, 
+-          Tong_trong_luong_TNE, Kim_ngach_USD, Tong_thue_thu_khac_VND
++          Tong_trong_luong_TNE, Kim_ngach_USD, Tong_thue_thu_khac_VND,
++          Trong_Thong_Ke, Thoi_diem_dang_ky, Thoi_diem_phan_luong, Thoi_diem_thong_quan, Ma_Cong_Chuc
+         ) VALUES (
+           @ID, @Ngay_dang_ky, @Tong_to_khai, @Ma_HQ, @Ma_LH, @Ma_DN_XNK, @Ten_DN_XNK,
+           @Luong, @Loai_XNK, @Nuoc_XNK, @Dia_diem_giam_sat, @So_luong_cont,
+-          @Tong_trong_luong_TNE, @Kim_ngach_USD, @Tong_thue_thu_khac_VND
++          @Tong_trong_luong_TNE, @Kim_ngach_USD, @Tong_thue_thu_khac_VND,
++          @Trong_Thong_Ke, @Thoi_diem_dang_ky, @Thoi_diem_phan_luong, @Thoi_diem_thong_quan, @Ma_Cong_Chuc
++        )
++      `);
++
++      // Insert to rpPhiCSHT (Infrastructure Fee for shipment)
++      const phiId = crypto.randomUUID();
++      const cargoType = CARGO_TYPES[Math.floor(Math.random() * CARGO_TYPES.length)];
++      const feeAmount = Math.round(qtyCont * 350000 + (Math.random() * 400000 + 100000));
++      const phiRequest = pool.request();
++      phiRequest.input('ID', sql.UniqueIdentifier, phiId);
++      phiRequest.input('Ngay_dang_ky', sql.Date, dateStr);
++      phiRequest.input('So_tien', sql.Numeric(38, 2), feeAmount);
++      phiRequest.input('Ma_HQ', sql.Char(4), branch);
++      phiRequest.input('Loai_XNK', sql.NVarChar(4), loaiXNK);
++      phiRequest.input('Ma_DN_XNK', sql.VarChar(20), ent.taxId);
++      phiRequest.input('Loai_hang', sql.NVarChar(50), cargoType);
++
++      await phiRequest.query(`
++        INSERT INTO rpPhiCSHT (
++          ID, Ngay_dang_ky, So_tien, Ma_HQ, Loai_XNK, Ma_DN_XNK, Loai_hang
++        ) VALUES (
++          @ID, @Ngay_dang_ky, @So_tien, @Ma_HQ, @Loai_XNK, @Ma_DN_XNK, @Loai_hang
+         )
+       `);
+ 
+       // 1 to 3 items per declaration
+       const itemsCount = Math.floor(Math.random() * 3) + 1;
+@@ -179,23 +307,16 @@ async function main() {
+         const comm = COMMODITIES[Math.floor(Math.random() * COMMODITIES.length)];
+         const qty = Math.round((weight / itemsCount) * 1000) / 1000;
+         const valVND = Math.round((valUSD / itemsCount) * 25000); // 1 USD = 25,000 VND
+         
+         // Calculate taxes:
+-        // thue_XNK: 5% of value for Import, 0% for Export
+         const thueXNK = isImport ? Math.round(valVND * 0.05) : 0;
+-        // thue_V (VAT): 10% of value
+         const thueV = isImport ? Math.round((valVND + thueXNK) * 0.10) : 0;
+-        // thue_T (SCT): 15% for fuel/special goods, 0% others
+         const thueT = comm.group === 'Nhi+¨n liﬂ+Áu' ? Math.round(valVND * 0.15) : 0;
+-        // thue_M (Env): environmental tax, 2% for chemicals/fuel
+         const thueM = (comm.group === 'Nhi+¨n liﬂ+Áu' || comm.group === 'H+¶a chﬂ¶—t') ? Math.round(valVND * 0.03) : 0;
+-        // thue_B (Defense): 1% for steel
+         const thueB = comm.group === 'Kim loﬂ¶Ìi' ? Math.round(valVND * 0.02) : 0;
+-        // thue_G (Other): 0.5%
+         const thueG = Math.round(valVND * 0.005);
+-
+         const totalTax = thueXNK + thueV + thueT + thueM + thueB + thueG;
+ 
+         const itemId = crypto.randomUUID();
+         const itemRequest = pool.request();
+         itemRequest.input('ID', sql.UniqueIdentifier, itemId);
+@@ -229,11 +350,48 @@ async function main() {
+           )
+         `);
+       }
+     }
+ 
+-    console.log(`Successfully seeded ${recordsToCreate} declarations and item rows!`);
++    console.log('Generating seed data for rpHieuSuatCongChuc (customs officer performance)...');
++    const dateArray = Array.from(generatedDates);
++    let officerRowsCount = 0;
++
++    for (const off of OFFICERS) {
++      // Seed ~15 daily records per officer spread across dates
++      const selectedDates = dateArray.filter(() => Math.random() < 0.25);
++      for (const dStr of selectedDates) {
++        const hsId = crypto.randomUUID();
++        const xanhCount = Math.floor(Math.random() * 25) + 5;
++        const vangCount = Math.floor(Math.random() * 12) + 2;
++        const doCount = Math.floor(Math.random() * 4) + 1;
++        // Violations discovered (hit rate on yellow/red)
++        const viPham = Math.random() < 0.35 ? Math.floor(Math.random() * 2) + 1 : 0;
++        const avgLeadTime = Math.round((20 + Math.random() * 40) * 10) / 10;
++
++        const hsRequest = pool.request();
++        hsRequest.input('ID', sql.UniqueIdentifier, hsId);
++        hsRequest.input('Ma_Cong_Chuc', sql.VarChar(50), off.code);
++        hsRequest.input('Ngay', sql.Date, dStr);
++        hsRequest.input('To_khai_xanh', sql.Int, xanhCount);
++        hsRequest.input('To_khai_vang', sql.Int, vangCount);
++        hsRequest.input('To_khai_do', sql.Int, doCount);
++        hsRequest.input('Vi_pham', sql.Int, viPham);
++        hsRequest.input('Thoi_gian_xu_ly_tb_phut', sql.Numeric(10, 2), avgLeadTime);
++
++        await hsRequest.query(`
++          INSERT INTO rpHieuSuatCongChuc (
++            ID, Ma_Cong_Chuc, Ngay, To_khai_xanh, To_khai_vang, To_khai_do, Vi_pham, Thoi_gian_xu_ly_tb_phut
++          ) VALUES (
++            @ID, @Ma_Cong_Chuc, @Ngay, @To_khai_xanh, @To_khai_vang, @To_khai_do, @Vi_pham, @Thoi_gian_xu_ly_tb_phut
++          )
++        `);
++        officerRowsCount++;
++      }
++    }
++
++    console.log(`Successfully seeded ${recordsToCreate} declarations, items, ${recordsToCreate} infrastructure fee rows, and ${officerRowsCount} officer performance rows!`);
+   } catch (err) {
+     console.error('Seeding process failed:', err);
+   } finally {
+     if (pool) {
+       await pool.close();
+diff --git a/src/lib/mockData.ts b/src/lib/mockData.ts
+index 2473737..fc4cd86 100644
+--- a/src/lib/mockData.ts
++++ b/src/lib/mockData.ts
+@@ -1,13 +1,64 @@
++export interface MockPhiCSHT {
++  id: string;
++  ngayDangKy: string;
++  soTien: number;
++  maHQ?: string;
++  loaiXNK?: string;
++  maDNXNK?: string;
++  loaiHang?: string;
++}
++
++export interface MockHieuSuatCongChuc {
++  id: string;
++  maCongChuc: string;
++  tenCongChuc?: string;
++  ngay: string;
++  toKhaiXanh: number;
++  toKhaiVang: number;
++  toKhaiDo: number;
++  viPham: number;
++  thoiGianXuLyTbPhut?: number;
++}
++
++export interface MockDeclaration {
++  id: string;
++  ngayDangKy: string;
++  tongToKhai: number;
++  maHQ: string;
++  maLH: string;
++  maDNXNK: string;
++  tenDNXNK: string;
++  luong: string;
++  loaiXNK: string;
++  nuocXNK: string;
++  diaDiemGiamSat: string;
++  soLuongCont: number;
++  tongTrongLuongTNE: number;
++  kimNgachUSD: number;
++  tongThueThuKhacVND: number;
++  trongThongKe: boolean;
++  thoiDiemDangKy: string;
++  thoiDiemPhanLuong: string;
++  thoiDiemThongQuan: string;
++  maCongChuc: string;
++}
++
+ export interface DashboardData {
+   isMock: boolean;
+   kpis: {
+     totalDeclarations: number;
+     totalValueUSD: number;
+     totalContainers: number;
+     totalWeightTNE: number;
+     totalTaxVND: number;
++    totalDeclarationsInStats?: number;
++    totalValueUSDInStats?: number;
++    totalPhiCSHTVND?: number;
++    targetPhiCSHTVND?: number;
++    activeEnterprises?: number;
++    newEnterprises?: number;
+   };
+   taxBreakdown: {
+     thueXNK: number;
+     thueV: number;
+     thueT: number;
+@@ -19,10 +70,11 @@ export interface DashboardData {
+   trends: Array<{
+     date: string;
+     valueUSD: number;
+     declarations: number;
+     taxVND: number;
++    feeCSHTVND?: number;
+   }>;
+   channels: Array<{
+     name: string;
+     value: number;
+     color: string;
+@@ -50,12 +102,156 @@ export interface DashboardData {
+     name: string;
+     valueUSD: number;
+     declarations: number;
+     containers: number;
+   }>;
++  phiCSHT?: {
++    totalFeeVND: number;
++    targetVND: number;
++    completionRate: number;
++    growthYoY: number;
++    growthMoM: number;
++    byType: Array<{ type: string; valueVND: number; percentage: number }>;
++    byCargo: Array<{ cargo: string; valueVND: number; percentage: number }>;
++    topEnterprises: Array<{ taxId: string; name: string; feeVND: number; count: number }>;
++    trends: Array<{ date: string; feeVND: number }>;
++  };
++  officerPerformance?: Array<{
++    maCongChuc: string;
++    tenCongChuc: string;
++    workload: number;
++    toKhaiXanh: number;
++    toKhaiVang: number;
++    toKhaiDo: number;
++    viPham: number;
++    hitRatePct: number;
++    avgLeadTimeMinutes: number;
++  }>;
++  clearance?: {
++    totalInStats: number;
++    totalOutOfStats: number;
++    inStatsValueUSD: number;
++    outOfStatsValueUSD: number;
++    exportDeclarations: number;
++    exportValueUSD: number;
++    importDeclarations: number;
++    importValueUSD: number;
++    tradeBalanceUSD: number;
++    avgLeadTimeMinutes: number;
++    leadTimeByLane: {
++      green: number;
++      yellow: number;
++      red: number;
++    };
++  };
+ }
+ 
++export const MOCK_OFFICERS = [
++  { code: 'CC01', name: 'Nguyﬂ+‡n V-‚n An' },
++  { code: 'CC02', name: 'Trﬂ¶∫n Thﬂ+Ô B+ºnh' },
++  { code: 'CC03', name: 'L+¨ Ho+·ng C¶¶ﬂ+•ng' },
++  { code: 'CC04', name: 'Phﬂ¶Ìm Minh -…ﬂ+¨c' },
++  { code: 'CC05', name: 'Ho+·ng Thﬂ+Ô Mai' },
++  { code: 'CC06', name: 'V+¨ Quﬂ+Êc H+¶ng' },
++  { code: 'CC07', name: '-…ﬂ+˘ B+°ch Ngﬂ+Ïc' },
++  { code: 'CC08', name: 'Ng+¶ Tuﬂ¶—n Anh' }
++];
++
++export const mockPhiCSHT: MockPhiCSHT[] = [
++  { id: 'phi-001', ngayDangKy: '2026-01-15', soTien: 1450000, maHQ: '01AB', loaiXNK: 'NK', maDNXNK: '0100793405', loaiHang: 'Container' },
++  { id: 'phi-002', ngayDangKy: '2026-01-22', soTien: 3200000, maHQ: '01AB', loaiXNK: 'XK', maDNXNK: '3600252879', loaiHang: 'H+·ng rﬂ+•i' },
++  { id: 'phi-003', ngayDangKy: '2026-02-10', soTien: 950000, maHQ: '02CI', loaiXNK: 'NK', maDNXNK: '0100101308', loaiHang: 'Container' },
++  { id: 'phi-004', ngayDangKy: '2026-02-18', soTien: 2100000, maHQ: '03EE', loaiXNK: 'NK', maDNXNK: '3500101112', loaiHang: 'H+·ng lﬂ+≈ng' },
++  { id: 'phi-005', ngayDangKy: '2026-03-05', soTien: 1800000, maHQ: '43NG', loaiXNK: 'XK', maDNXNK: '0302568603', loaiHang: 'Container' },
++  { id: 'phi-006', ngayDangKy: '2026-03-19', soTien: 4500000, maHQ: '51CD', loaiXNK: 'NK', maDNXNK: '0100150619', loaiHang: 'H+·ng lﬂ+≈ng' },
++  { id: 'phi-007', ngayDangKy: '2026-04-12', soTien: 2750000, maHQ: '01AB', loaiXNK: 'XK', maDNXNK: '1800155054', loaiHang: 'Container' },
++  { id: 'phi-008', ngayDangKy: '2026-04-28', soTien: 1200000, maHQ: '02CI', loaiXNK: 'NK', maDNXNK: '0300996328', loaiHang: 'Container' },
++  { id: 'phi-009', ngayDangKy: '2026-05-14', soTien: 3100000, maHQ: '03EE', loaiXNK: 'NK', maDNXNK: '3700148156', loaiHang: 'H+·ng rﬂ+•i' },
++  { id: 'phi-010', ngayDangKy: '2026-05-27', soTien: 1650000, maHQ: '43NG', loaiXNK: 'XK', maDNXNK: '0300481234', loaiHang: 'Container' },
++  { id: 'phi-011', ngayDangKy: '2026-06-02', soTien: 2900000, maHQ: '51CD', loaiXNK: 'NK', maDNXNK: '0100793405', loaiHang: 'Container' }
++];
++
++export const mockHieuSuatCongChuc: MockHieuSuatCongChuc[] = [
++  { id: 'hs-001', maCongChuc: 'CC01', tenCongChuc: 'Nguyﬂ+‡n V-‚n An', ngay: '2026-05-02', toKhaiXanh: 28, toKhaiVang: 12, toKhaiDo: 3, viPham: 1, thoiGianXuLyTbPhut: 24.5 },
++  { id: 'hs-002', maCongChuc: 'CC02', tenCongChuc: 'Trﬂ¶∫n Thﬂ+Ô B+ºnh', ngay: '2026-05-02', toKhaiXanh: 32, toKhaiVang: 8, toKhaiDo: 2, viPham: 0, thoiGianXuLyTbPhut: 18.2 },
++  { id: 'hs-003', maCongChuc: 'CC03', tenCongChuc: 'L+¨ Ho+·ng C¶¶ﬂ+•ng', ngay: '2026-05-02', toKhaiXanh: 22, toKhaiVang: 15, toKhaiDo: 4, viPham: 2, thoiGianXuLyTbPhut: 32.1 },
++  { id: 'hs-004', maCongChuc: 'CC04', tenCongChuc: 'Phﬂ¶Ìm Minh -…ﬂ+¨c', ngay: '2026-05-02', toKhaiXanh: 26, toKhaiVang: 10, toKhaiDo: 2, viPham: 0, thoiGianXuLyTbPhut: 22.4 },
++  { id: 'hs-005', maCongChuc: 'CC05', tenCongChuc: 'Ho+·ng Thﬂ+Ô Mai', ngay: '2026-05-02', toKhaiXanh: 30, toKhaiVang: 9, toKhaiDo: 1, viPham: 0, thoiGianXuLyTbPhut: 19.8 },
++  { id: 'hs-006', maCongChuc: 'CC06', tenCongChuc: 'V+¨ Quﬂ+Êc H+¶ng', ngay: '2026-05-02', toKhaiXanh: 25, toKhaiVang: 14, toKhaiDo: 3, viPham: 1, thoiGianXuLyTbPhut: 28.6 },
++  { id: 'hs-007', maCongChuc: 'CC07', tenCongChuc: '-…ﬂ+˘ B+°ch Ngﬂ+Ïc', ngay: '2026-05-02', toKhaiXanh: 35, toKhaiVang: 6, toKhaiDo: 1, viPham: 0, thoiGianXuLyTbPhut: 16.5 },
++  { id: 'hs-008', maCongChuc: 'CC08', tenCongChuc: 'Ng+¶ Tuﬂ¶—n Anh', ngay: '2026-05-02', toKhaiXanh: 20, toKhaiVang: 16, toKhaiDo: 5, viPham: 2, thoiGianXuLyTbPhut: 36.4 }
++];
++
++export const mockDeclarations: MockDeclaration[] = [
++  {
++    id: 'tk-001',
++    ngayDangKy: '2026-05-10',
++    tongToKhai: 1,
++    maHQ: '01AB',
++    maLH: 'A11',
++    maDNXNK: '0100793405',
++    tenDNXNK: 'C+ˆNG TY TNHH SAMSUNG ELECTRONICS VIﬂ+ÂT NAM',
++    luong: 'Xanh',
++    loaiXNK: 'NK',
++    nuocXNK: 'H+·n Quﬂ+Êc',
++    diaDiemGiamSat: 'Cﬂ¶ÛNG Hﬂ¶ÛI PH+∆NG',
++    soLuongCont: 4,
++    tongTrongLuongTNE: 48.5,
++    kimNgachUSD: 185000,
++    tongThueThuKhacVND: 46250000,
++    trongThongKe: true,
++    thoiDiemDangKy: '2026-05-10T08:15:00',
++    thoiDiemPhanLuong: '2026-05-10T08:17:30',
++    thoiDiemThongQuan: '2026-05-10T08:21:00',
++    maCongChuc: 'CC01'
++  },
++  {
++    id: 'tk-002',
++    ngayDangKy: '2026-05-11',
++    tongToKhai: 1,
++    maHQ: '01AB',
++    maLH: 'B11',
++    maDNXNK: '3600252879',
++    tenDNXNK: 'C+ˆNG TY Cﬂ+ˆ PHﬂ¶™N TH+ÎP H+∆A PH+¸T DUNG QUﬂ¶ÒT',
++    luong: 'V+·ng',
++    loaiXNK: 'XK',
++    nuocXNK: 'Hoa Kﬂ+¶',
++    diaDiemGiamSat: 'Cﬂ¶ÛNG Hﬂ¶ÛI PH+∆NG',
++    soLuongCont: 6,
++    tongTrongLuongTNE: 120.0,
++    kimNgachUSD: 310000,
++    tongThueThuKhacVND: 0,
++    trongThongKe: true,
++    thoiDiemDangKy: '2026-05-11T09:30:00',
++    thoiDiemPhanLuong: '2026-05-11T09:33:00',
++    thoiDiemThongQuan: '2026-05-11T10:15:00',
++    maCongChuc: 'CC02'
++  },
++  {
++    id: 'tk-003',
++    ngayDangKy: '2026-05-12',
++    tongToKhai: 1,
++    maHQ: '02CI',
++    maLH: 'G11',
++    maDNXNK: '0100101308',
++    tenDNXNK: 'Tﬂ+ˆNG C+ˆNG TY H+«NG KH+ˆNG VIﬂ+ÂT NAM - CTCP',
++    luong: '-…ﬂ+≈',
++    loaiXNK: 'NK',
++    nuocXNK: '-…ﬂ+¨c',
++    diaDiemGiamSat: 'Cﬂ¶ÛNG Hﬂ¶ÛI PH+∆NG',
++    soLuongCont: 2,
++    tongTrongLuongTNE: 15.2,
++    kimNgachUSD: 95000,
++    tongThueThuKhacVND: 12500000,
++    trongThongKe: false, // Sample / transit / non-trade
++    thoiDiemDangKy: '2026-05-12T10:00:00',
++    thoiDiemPhanLuong: '2026-05-12T10:04:00',
++    thoiDiemThongQuan: '2026-05-12T14:45:00',
++    maCongChuc: 'CC03'
++  }
++];
++
+ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: string): DashboardData {
+   // Generate high quality mock data based on Vietnamese customs context
+   const start = startDate ? new Date(startDate) : new Date('2026-01-01');
+   const end = endDate ? new Date(endDate) : new Date('2026-06-30');
+   
+@@ -84,20 +280,26 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+   const totalDeclarations = Math.round(15240 * multiplier);
+   const totalValueUSD = 482590000 * multiplier;
+   const totalContainers = Math.round(28400 * multiplier);
+   const totalWeightTNE = 352400 * multiplier;
+   const totalTaxVND = 1254300000000 * multiplier; // 1,254 billion VND
++  
++  // Statistical Trade breakdown
++  const totalDeclarationsInStats = Math.round(totalDeclarations * 0.925);
++  const totalValueUSDInStats = Math.round(totalValueUSD * 0.94);
++  const totalPhiCSHTVND = Math.round(48500000000 * multiplier); // ~48.5 billion VND
++  const targetPhiCSHTVND = Math.round(52000000000 * multiplier); // ~52 billion target
+ 
+   // Generate trends
+   const trends = months.map((m, idx) => {
+-    // Generate slight seasonality
+     const factor = 0.85 + Math.sin(idx * 1.5) * 0.15;
+     return {
+       date: m,
+       valueUSD: Math.round((totalValueUSD / months.length) * factor),
+       declarations: Math.round((totalDeclarations / months.length) * factor),
+       taxVND: Math.round((totalTaxVND / months.length) * factor),
++      feeCSHTVND: Math.round((totalPhiCSHTVND / months.length) * factor),
+     };
+   });
+ 
+   // Channels distribution: Green (65%), Yellow (30%), Red (5%)
+   const channels = [
+@@ -129,11 +331,11 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+     { name: 'N+¶ng sﬂ¶˙n, thﬂ+∫y sﬂ¶˙n c+Ìc loﬂ¶Ìi', pct: 0.05, taxPct: 0.04 },
+   ];
+ 
+   const commodities = commoditiesList.map(item => ({
+     name: item.name,
+-    valueVND: Math.round(totalValueUSD * 25000 * item.pct), // Approximate USD to VND
++    valueVND: Math.round(totalValueUSD * 25000 * item.pct),
+     taxVND: Math.round(totalTaxVND * item.taxPct),
+     quantity: Math.round(totalWeightTNE * item.pct * 1.5),
+   })).sort((a, b) => b.valueVND - a.valueVND);
+ 
+   // Top partner countries
+@@ -158,23 +360,136 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+     { taxId: '0100150619', name: 'Tﬂ¶ºP -…O+«N X-ÈNG Dﬂ¶™U VIﬂ+ÂT NAM (PETROLIMEX)', valueUSD: Math.round(totalValueUSD * 0.038), declarations: Math.round(totalDeclarations * 0.03), containers: Math.round(totalContainers * 0.04) },
+     { taxId: '1800155054', name: 'C+ˆNG TY Cﬂ+ˆ PHﬂ¶™N Lﬂ+ÓC H+ÙA Dﬂ¶™U B+ÓNH S¶·N', valueUSD: Math.round(totalValueUSD * 0.035), declarations: Math.round(totalDeclarations * 0.02), containers: Math.round(totalContainers * 0.03) },
+     { taxId: '0300996328', name: 'C+ˆNG TY TNHH N¶ªﬂ+‹C GIﬂ¶ÛI KH+¸T COCA-COLA VIﬂ+ÂT NAM', valueUSD: Math.round(totalValueUSD * 0.025), declarations: Math.round(totalDeclarations * 0.025), containers: Math.round(totalContainers * 0.025) },
+   ].sort((a, b) => b.valueUSD - a.valueUSD);
+ 
++  // URD Section: Ph+° C¶Ì Sﬂ+É Hﬂ¶Ì Tﬂ¶∫ng (Seaport Infrastructure Fee)
++  const phiCSHT = {
++    totalFeeVND: totalPhiCSHTVND,
++    targetVND: targetPhiCSHTVND,
++    completionRate: Math.round((totalPhiCSHTVND / targetPhiCSHTVND) * 1000) / 10,
++    growthYoY: 8.4,
++    growthMoM: 3.1,
++    byType: [
++      { type: 'Nhﬂ¶°p khﬂ¶¨u', valueVND: Math.round(totalPhiCSHTVND * 0.58), percentage: 58 },
++      { type: 'Xuﬂ¶—t khﬂ¶¨u', valueVND: Math.round(totalPhiCSHTVND * 0.42), percentage: 42 }
++    ],
++    byCargo: [
++      { cargo: 'Container', valueVND: Math.round(totalPhiCSHTVND * 0.68), percentage: 68 },
++      { cargo: 'H+·ng rﬂ+•i', valueVND: Math.round(totalPhiCSHTVND * 0.20), percentage: 20 },
++      { cargo: 'H+·ng lﬂ+≈ng', valueVND: Math.round(totalPhiCSHTVND * 0.12), percentage: 12 }
++    ],
++    topEnterprises: [
++      { taxId: '0100793405', name: 'C+ˆNG TY TNHH SAMSUNG ELECTRONICS VIﬂ+ÂT NAM', feeVND: Math.round(totalPhiCSHTVND * 0.18), count: 2150 },
++      { taxId: '3600252879', name: 'C+ˆNG TY Cﬂ+ˆ PHﬂ¶™N TH+ÎP H+∆A PH+¸T DUNG QUﬂ¶ÒT', feeVND: Math.round(totalPhiCSHTVND * 0.12), count: 1420 },
++      { taxId: '0100150619', name: 'Tﬂ¶ºP -…O+«N X-ÈNG Dﬂ¶™U VIﬂ+ÂT NAM (PETROLIMEX)', feeVND: Math.round(totalPhiCSHTVND * 0.09), count: 850 },
++      { taxId: '1800155054', name: 'C+ˆNG TY Cﬂ+ˆ PHﬂ¶™N Lﬂ+ÓC H+ÙA Dﬂ¶™U B+ÓNH S¶·N', feeVND: Math.round(totalPhiCSHTVND * 0.08), count: 760 },
++      { taxId: '0302568603', name: 'C+ˆNG TY Cﬂ+ˆ PHﬂ¶™N Sﬂ+´A VIﬂ+ÂT NAM (VINAMILK)', feeVND: Math.round(totalPhiCSHTVND * 0.06), count: 620 }
++    ],
++    trends: months.map((m, idx) => ({
++      date: m,
++      feeVND: Math.round((totalPhiCSHTVND / months.length) * (0.88 + Math.sin(idx * 1.2) * 0.14))
++    }))
++  };
++
++  // URD Section: Officer Performance (Workload, Lead Time, Hit Rate)
++  const officerPerformance = MOCK_OFFICERS.map((off, idx) => {
++    const toKhaiXanh = 180 + idx * 25;
++    const toKhaiVang = 85 + (idx % 3) * 15;
++    const toKhaiDo = 20 + (idx % 4) * 8;
++    const workload = toKhaiXanh + toKhaiVang + toKhaiDo;
++    const viPham = Math.round(toKhaiDo * 0.25 + toKhaiVang * 0.04);
++    const hitRatePct = Math.round((viPham / (toKhaiVang + toKhaiDo)) * 1000) / 10;
++    const avgLeadTimeMinutes = Math.round((18 + (idx % 5) * 6.5) * 10) / 10;
++
++    return {
++      maCongChuc: off.code,
++      tenCongChuc: off.name,
++      workload,
++      toKhaiXanh,
++      toKhaiVang,
++      toKhaiDo,
++      viPham,
++      hitRatePct,
++      avgLeadTimeMinutes
++    };
++  });
++
++  // URD Section: Clearance Statistics (Statistical goods filtering)
++  const clearance = {
++    totalInStats: totalDeclarationsInStats,
++    totalOutOfStats: totalDeclarations - totalDeclarationsInStats,
++    inStatsValueUSD: totalValueUSDInStats,
++    outOfStatsValueUSD: totalValueUSD - totalValueUSDInStats,
++    exportDeclarations: Math.round(totalDeclarationsInStats * 0.46),
++    exportValueUSD: Math.round(totalValueUSDInStats * 0.48),
++    importDeclarations: Math.round(totalDeclarationsInStats * 0.54),
++    importValueUSD: Math.round(totalValueUSDInStats * 0.52),
++    tradeBalanceUSD: Math.round(totalValueUSDInStats * (0.48 - 0.52)),
++    avgLeadTimeMinutes: 24.8,
++    leadTimeByLane: {
++      green: 3.2,
++      yellow: 36.5,
++      red: 220.0
++    }
++  };
++
+   return {
+     isMock: true,
+     kpis: {
+       totalDeclarations,
+       totalValueUSD,
+       totalContainers,
+       totalWeightTNE,
+       totalTaxVND,
++      totalDeclarationsInStats,
++      totalValueUSDInStats,
++      totalPhiCSHTVND,
++      targetPhiCSHTVND,
++      activeEnterprises: enterprises.length * 15,
++      newEnterprises: 18
+     },
+     taxBreakdown,
+     trends,
+     channels,
+     commodities,
+     countries,
+     enterprises,
+     topEnterprises: enterprises,
++    phiCSHT,
++    officerPerformance,
++    clearance
+   };
+ }
++
++// Helpers for Task 2 endpoints fallback
++export function getMockRevenue(startDate?: string, endDate?: string, branch?: string) {
++  const stats = getMockStats(startDate, endDate);
++  return {
++    isMock: true,
++    branch: branch || 'ALL',
++    kpis: stats.kpis,
++    taxBreakdown: stats.taxBreakdown,
++    phiCSHT: stats.phiCSHT,
++    trends: stats.trends
++  };
++}
++
++export function getMockClearance(startDate?: string, endDate?: string, branch?: string) {
++  const stats = getMockStats(startDate, endDate);
++  return {
++    isMock: true,
++    branch: branch || 'ALL',
++    clearance: stats.clearance,
++    channels: stats.channels,
++    commodities: stats.commodities
++  };
++}
++
++export function getMockOfficerPerformance(startDate?: string, endDate?: string) {
++  const stats = getMockStats(startDate, endDate);
++  return {
++    isMock: true,
++    officers: stats.officerPerformance
++  };
++}
++
+

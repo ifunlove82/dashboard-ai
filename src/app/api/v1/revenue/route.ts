@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDbConnection, sql } from '@/lib/db';
-import { getMockRevenue } from '@/lib/mockData';
+
 
 function getDateRange(timeframe: string | null, start: string | null, end: string | null) {
   let startDate = start;
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
     let hangWhere = '1=1';
     let hangFrom = 'rpHang h';
     if (branch !== 'ALL') {
-      hangFrom += ' JOIN rpToKhai t ON h.ID = t.ID';
+      hangFrom += ' JOIN rpToKhai t ON h.ID_ToKhai = t.ID';
       hangWhere += ' AND t.Ma_HQ = @branch';
     }
     if (startDate) hangWhere += ' AND h.Ngay_dang_ky >= @startDate';
@@ -106,8 +106,6 @@ export async function GET(request: Request) {
 
     const [declarationsResult, phiResult, hangResult] = await Promise.all([pDeclarations, pPhi, pHang]);
 
-    const mockDataRef = getMockRevenue(startDate, endDate, branch);
-
     const row = declarationsResult.recordset[0] || {};
     const phiRow = phiResult.recordset[0] || {};
     const hangRow = hangResult.recordset[0] || {};
@@ -115,7 +113,6 @@ export async function GET(request: Request) {
     const livePhiTotal = phiRow.totalPhiCSHTVND || 0;
 
     const kpis = {
-      ...mockDataRef.kpis,
       totalDeclarations: row.totalDeclarations || 0,
       totalValueUSD: row.totalValueUSD || 0,
       totalTaxVND: (row.totalTaxVND || 0) + 
@@ -142,10 +139,9 @@ export async function GET(request: Request) {
       thueKhac: row.totalTaxVND || 0
     };
 
-    const phiCSHT = mockDataRef.phiCSHT ? {
-      ...mockDataRef.phiCSHT,
+    const phiCSHT = {
       totalFeeVND: livePhiTotal
-    } : undefined;
+    };
 
     const data = {
       isMock: false,
@@ -153,19 +149,16 @@ export async function GET(request: Request) {
       kpis,
       taxBreakdown,
       phiCSHT,
-      trends: mockDataRef.trends
     };
 
     return NextResponse.json({
       meta: { status: 200 },
       data: data
     });
-  } catch (error) {
-    console.warn('Database failed, falling back to mock data', error);
-    const mockData = getMockRevenue(startDate, endDate, branch);
+  } catch (error: any) {
+    console.error('Database query failed:', error);
     return NextResponse.json({
-      meta: { status: 200 },
-      data: mockData
-    });
+      meta: { status: 500, error: error.message }
+    }, { status: 500 });
   }
 }

@@ -1,0 +1,484 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-12T12:05:00.000Z",
+  "title": "Design System: VNACCS Intel - Customs Executive Dashboard",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Customs Cobalt Blue",
+        "canonical": "#2563eb",
+        "tonalRamp": [
+          "#172554",
+          "#1e3a8a",
+          "#1e40af",
+          "#1d4ed8",
+          "#2563eb",
+          "#3b82f6",
+          "#60a5fa",
+          "#dbeafe"
+        ]
+      },
+      "primary-deep": {
+        "role": "primary",
+        "displayName": "Maritime Navy Deep",
+        "canonical": "#1d4ed8",
+        "tonalRamp": [
+          "#0f172a",
+          "#1e293b",
+          "#1e3a8a",
+          "#1d4ed8",
+          "#2563eb",
+          "#60a5fa",
+          "#93c5fd",
+          "#eff6ff"
+        ]
+      },
+      "primary-subtle": {
+        "role": "primary",
+        "displayName": "Customs Tint Subtle",
+        "canonical": "#dbeafe",
+        "tonalRamp": [
+          "#1e3a8a",
+          "#1d4ed8",
+          "#2563eb",
+          "#3b82f6",
+          "#93c5fd",
+          "#bfdbfe",
+          "#dbeafe",
+          "#eff6ff"
+        ]
+      },
+      "trend-line": {
+        "role": "secondary",
+        "displayName": "Fiscal Indigo",
+        "canonical": "#4f46e5",
+        "tonalRamp": [
+          "#1e1b4b",
+          "#312e81",
+          "#3730a3",
+          "#4338ca",
+          "#4f46e5",
+          "#6366f1",
+          "#818cf8",
+          "#e0e7ff"
+        ]
+      },
+      "commodity-cyan": {
+        "role": "secondary",
+        "displayName": "Cargo Cyan",
+        "canonical": "#0284c7",
+        "tonalRamp": [
+          "#082f49",
+          "#0c4a6e",
+          "#075985",
+          "#0369a1",
+          "#0284c7",
+          "#0ea5e9",
+          "#38bdf8",
+          "#e0f2fe"
+        ]
+      },
+      "tax-special": {
+        "role": "tertiary",
+        "displayName": "Excise Violet",
+        "canonical": "#7c3aed",
+        "tonalRamp": [
+          "#2e1065",
+          "#4c1d95",
+          "#5b21b6",
+          "#6d28d9",
+          "#7c3aed",
+          "#8b5cf6",
+          "#a78bfa",
+          "#ede9fe"
+        ]
+      },
+      "tax-environmental": {
+        "role": "tertiary",
+        "displayName": "Eco Teal",
+        "canonical": "#0d9488",
+        "tonalRamp": [
+          "#042f2e",
+          "#134e4a",
+          "#115e59",
+          "#0f766e",
+          "#0d9488",
+          "#14b8a6",
+          "#2dd4bf",
+          "#ccfbf1"
+        ]
+      },
+      "tax-other": {
+        "role": "tertiary",
+        "displayName": "Statutory Slate",
+        "canonical": "#64748b",
+        "tonalRamp": [
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#f1f5f9"
+        ]
+      },
+      "lane-green": {
+        "role": "secondary",
+        "displayName": "Luồng Xanh (Green Lane)",
+        "canonical": "#10b981",
+        "tonalRamp": [
+          "#022c22",
+          "#064e3b",
+          "#065f46",
+          "#047857",
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#d1fae5"
+        ]
+      },
+      "lane-yellow": {
+        "role": "secondary",
+        "displayName": "Luồng Vàng (Yellow Lane)",
+        "canonical": "#f59e0b",
+        "tonalRamp": [
+          "#451a03",
+          "#78350f",
+          "#92400e",
+          "#b45309",
+          "#d97706",
+          "#f59e0b",
+          "#fbbf24",
+          "#fef3c7"
+        ]
+      },
+      "lane-red": {
+        "role": "secondary",
+        "displayName": "Luồng Đỏ (Red Lane)",
+        "canonical": "#ef4444",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#dc2626",
+          "#ef4444",
+          "#f87171",
+          "#fee2e2"
+        ]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Clean Slate Light",
+        "canonical": "#f8fafc",
+        "tonalRamp": [
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0",
+          "#f8fafc"
+        ]
+      },
+      "neutral-dark-bg": {
+        "role": "neutral",
+        "displayName": "Deep Midnight Dark",
+        "canonical": "#020617",
+        "tonalRamp": [
+          "#020617",
+          "#0b0f19",
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#f8fafc"
+        ]
+      },
+      "surface-card": {
+        "role": "neutral",
+        "displayName": "Card Surface Light",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8",
+          "#e2e8f0",
+          "#f1f5f9",
+          "#ffffff"
+        ]
+      },
+      "surface-dark-card": {
+        "role": "neutral",
+        "displayName": "Card Surface Dark",
+        "canonical": "#0f172a",
+        "tonalRamp": [
+          "#020617",
+          "#090d16",
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#cbd5e1"
+        ]
+      },
+      "border-hairline": {
+        "role": "neutral",
+        "displayName": "Hairline Border Light",
+        "canonical": "#e2e8f0",
+        "tonalRamp": [
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0",
+          "#f1f5f9"
+        ]
+      },
+      "border-dark-hairline": {
+        "role": "neutral",
+        "displayName": "Hairline Border Dark",
+        "canonical": "#1e293b",
+        "tonalRamp": [
+          "#020617",
+          "#0b0f19",
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8"
+        ]
+      },
+      "text-main": {
+        "role": "neutral",
+        "displayName": "Text Dark Main",
+        "canonical": "#0f172a",
+        "tonalRamp": [
+          "#020617",
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1"
+        ]
+      },
+      "text-dark-main": {
+        "role": "neutral",
+        "displayName": "Text Light Main",
+        "canonical": "#f8fafc",
+        "tonalRamp": [
+          "#1e293b",
+          "#334155",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0",
+          "#f1f5f9",
+          "#f8fafc"
+        ]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Text Muted Slate",
+        "canonical": "#64748b",
+        "tonalRamp": [
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display / Tiêu đề chính",
+        "purpose": "Tiêu đề đầu mối cấp cao của trang điều hành và in ấn báo cáo A4."
+      },
+      "headline": {
+        "displayName": "Headline / Chỉ số chính",
+        "purpose": "Số đo tài chính trung tâm trên các thẻ KPI (kết hợp tabular-nums)."
+      },
+      "title": {
+        "displayName": "Title / Phân mục",
+        "purpose": "Tiêu đề của các Card module và đồ thị phân tích."
+      },
+      "body": {
+        "displayName": "Body / Nội dung",
+        "purpose": "Văn bản phân tích AI, bảng biểu và diễn giải số liệu."
+      },
+      "label": {
+        "displayName": "Label / Nhãn công vụ",
+        "purpose": "Nhãn phân loại chỉ số, trạng thái luồng, tiêu đề cột bảng dữ liệu."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hairline-subtle",
+        "value": "0 0 0 1px rgba(15, 23, 42, 0.08)",
+        "purpose": "Đường viền vi mô sắc nét phân tách các khối KPI và container."
+      },
+      {
+        "name": "hover-micro",
+        "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        "purpose": "Phản hồi xúc giác vi mô khi di chuột qua nút tác vụ."
+      },
+      {
+        "name": "dropdown-float",
+        "value": "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+        "purpose": "Nổi khối cho Tooltip đồ thị và menu phím tắt."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-fast",
+        "value": "cubic-bezier(0, 0, 0.2, 1)",
+        "purpose": "Chuyển trạng thái hover và active trong 150ms."
+      },
+      {
+        "name": "chart-ease",
+        "value": "ease-out",
+        "purpose": "Hiệu ứng xuất hiện dữ liệu đồ thị Recharts trong 600ms."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Nút tác vụ chính màu xanh Hải quan trên thanh công cụ và điều hướng.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg> Xuất Báo cáo</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px; background: #2563eb; color: #ffffff; font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; transition: background 0.15s, transform 0.15s; outline: none; } .ds-btn-primary:hover { background: #1d4ed8; } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Nút viền mảnh vi mô cho các hành động phụ trợ như sao chép, bộ lọc.",
+      "html": "<button class=\"ds-btn-outline\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\"/><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"/></svg> Sao chép</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 10px; background: transparent; color: #0f172a; font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: background 0.15s, border-color 0.15s, transform 0.15s; outline: none; } .ds-btn-outline:hover { background: #f1f5f9; border-color: #cbd5e1; } .ds-btn-outline:active { transform: scale(0.97); } .ds-btn-outline:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }"
+    },
+    {
+      "name": "KPI Metric Card",
+      "kind": "card",
+      "refersTo": "card-kpi",
+      "description": "Thẻ hiển thị chỉ số điều hành then chốt (kim ngạch, thuế, tờ khai).",
+      "html": "<div class=\"ds-card-kpi\"><div class=\"ds-kpi-header\"><span class=\"ds-kpi-label\">Tổng kim ngạch XNK</span><div class=\"ds-kpi-icon\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"12\" y1=\"1\" x2=\"12\" y2=\"23\"/><path d=\"M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6\"/></svg></div></div><div class=\"ds-kpi-value\">$14.28B</div><div class=\"ds-kpi-footer\"><span>Quy đổi: </span><strong>357.000 Tỷ VND</strong></div></div>",
+      "css": ".ds-card-kpi { display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px; background: #ffffff; border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.02); font-family: Inter, sans-serif; transition: border-color 0.2s; } .ds-card-kpi:hover { border-color: #3b82f6; } .ds-kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; } .ds-kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; } .ds-kpi-icon { width: 28px; height: 28px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; } .ds-kpi-value { font-size: 24px; font-weight: 900; letter-spacing: -0.02em; color: #0f172a; font-variant-numeric: tabular-nums; line-height: 1.15; } .ds-kpi-footer { font-size: 11px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 4px; } .ds-kpi-footer strong { color: #0f172a; font-weight: 700; }"
+    },
+    {
+      "name": "Statutory Clearance Badge - Green",
+      "kind": "chip",
+      "refersTo": "lane-green",
+      "description": "Huy hiệu Luồng Xanh - Miễn kiểm tra hồ sơ và hàng hóa theo Luật Hải quan.",
+      "html": "<span class=\"ds-chip-green\"><span class=\"ds-chip-dot ds-chip-dot-green\"></span>Luồng Xanh (65.4%)</span>",
+      "css": ".ds-chip-green { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; background: #ecfdf5; color: #065f46; font-family: Inter, sans-serif; font-size: 11px; font-weight: 700; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.3); font-variant-numeric: tabular-nums; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 9999px; } .ds-chip-dot-green { background: #10b981; }"
+    },
+    {
+      "name": "Statutory Clearance Badge - Yellow",
+      "kind": "chip",
+      "refersTo": "lane-yellow",
+      "description": "Huy hiệu Luồng Vàng - Kiểm tra chứng từ hải quan.",
+      "html": "<span class=\"ds-chip-yellow\"><span class=\"ds-chip-dot ds-chip-dot-yellow\"></span>Luồng Vàng (28.2%)</span>",
+      "css": ".ds-chip-yellow { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; background: #fffbeb; color: #92400e; font-family: Inter, sans-serif; font-size: 11px; font-weight: 700; border-radius: 9999px; border: 1px solid rgba(245, 158, 11, 0.3); font-variant-numeric: tabular-nums; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 9999px; } .ds-chip-dot-yellow { background: #f59e0b; }"
+    },
+    {
+      "name": "Statutory Clearance Badge - Red",
+      "kind": "chip",
+      "refersTo": "lane-red",
+      "description": "Huy hiệu Luồng Đỏ - Kiểm tra chứng từ và thực tế hàng hóa.",
+      "html": "<span class=\"ds-chip-red\"><span class=\"ds-chip-dot ds-chip-dot-red\"></span>Luồng Đỏ (6.4%)</span>",
+      "css": ".ds-chip-red { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; background: #fef2f2; color: #991b1b; font-family: Inter, sans-serif; font-size: 11px; font-weight: 700; border-radius: 9999px; border: 1px solid rgba(239, 68, 68, 0.3); font-variant-numeric: tabular-nums; } .ds-chip-dot { width: 6px; height: 6px; border-radius: 9999px; } .ds-chip-dot-red { background: #ef4444; }"
+    },
+    {
+      "name": "Customs Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Ô tìm kiếm nhanh mã số thuế hoặc tên doanh nghiệp với phím tắt gợi ý.",
+      "html": "<div class=\"ds-search-wrapper\"><svg class=\"ds-search-icon\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-search-input\" type=\"text\" placeholder=\"Tra cứu tên DN, MST...\" /><kbd class=\"ds-search-kbd\">/</kbd></div>",
+      "css": ".ds-search-wrapper { position: relative; display: flex; align-items: center; width: 260px; font-family: Inter, sans-serif; } .ds-search-icon { position: absolute; left: 10px; color: #94a3b8; pointer-events: none; } .ds-search-input { width: 100%; height: 32px; padding: 0 32px 0 32px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #0f172a; outline: none; transition: border-color 0.15s, background 0.15s; } .ds-search-input:focus { border-color: #2563eb; background: #ffffff; outline: 2px solid rgba(37, 99, 235, 0.2); } .ds-search-kbd { position: absolute; right: 8px; padding: 1px 5px; font-family: monospace; font-size: 10px; color: #64748b; background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; pointer-events: none; }"
+    },
+    {
+      "name": "Enterprise 6-Month Sparkline Card",
+      "kind": "custom",
+      "refersTo": "custom-sparkline",
+      "description": "Đồ thị mini SVG hiển thị chuỗi tăng trưởng kim ngạch 6 tháng của doanh nghiệp.",
+      "html": "<div class=\"ds-sparkline-box\"><span class=\"ds-sparkline-title\">Xu hướng 6 tháng</span><svg class=\"ds-sparkline-svg\" viewBox=\"0 0 240 44\"><defs><linearGradient id=\"ds-spark-grad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#2563eb\" stop-opacity=\"0.25\"/><stop offset=\"100%\" stop-color=\"#2563eb\" stop-opacity=\"0.0\"/></linearGradient></defs><path d=\"M 8.0,32.0 L 52.8,38.0 L 97.6,26.0 L 142.4,18.0 L 187.2,12.0 L 232.0,6.0 L 232.0,44 L 8.0,44 Z\" fill=\"url(#ds-spark-grad)\"/><path d=\"M 8.0,32.0 L 52.8,38.0 L 97.6,26.0 L 142.4,18.0 L 187.2,12.0 L 232.0,6.0\" fill=\"none\" stroke=\"#2563eb\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"232.0\" cy=\"6.0\" r=\"3.5\" fill=\"#2563eb\"/></svg><span class=\"ds-sparkline-growth\">+35.2%</span></div>",
+      "css": ".ds-sparkline-box { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-family: Inter, sans-serif; } .ds-sparkline-title { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; white-space: nowrap; } .ds-sparkline-svg { width: 140px; height: 32px; overflow: visible; } .ds-sparkline-growth { font-size: 11px; font-weight: 700; color: #10b981; font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Customs Command Bridge",
+    "overview": "VNACCS Intel được thiết kế như một trung tâm chỉ huy số liệu điều hành hải quan hiện đại, nơi hội tụ giữa chuẩn mực uy nghiêm của cơ quan công quyền nhà nước và sự linh hoạt, chuẩn xác của hệ thống công nghệ xử lý dữ liệu lớn thời gian thực. Giao diện từ chối mọi thủ pháp trang trí rườm rà, tập trung tuyệt đối vào tỷ lệ nén thông tin cao (Data-Dense Executive HUD), giúp các cấp Lãnh đạo Tổng cục, Cục trưởng và chuyên viên phân tích nghiệp vụ nắm bắt toàn cảnh dòng chảy xuất nhập khẩu quốc gia chỉ qua một ánh nhìn.\n\nHệ thống đặt trọng tâm vào tính kỷ luật thị giác: cấu trúc phân tầng rành mạch, số liệu tài chính và tờ khai được căn lề chuẩn xác, và bảng màu công vụ mang tính pháp lý cao. Mọi thành phần từ thẻ chỉ số KPI, biểu đồ kết hợp kim ngạch - thuế thu, đồ thị phân bổ tỷ trọng đến bảng xếp hạng doanh nghiệp đều được tối ưu hóa cho màn hình làm việc trung tâm cũng như sẵn sàng xuất bản in ấn định dạng vector A4 chuẩn mực.",
+    "keyCharacteristics": [
+      "Mật độ dữ liệu cao (Data-Dense HUD): Tối đa hóa lượng thông tin hữu ích trên mỗi viewport mà không gây quá tải nhận thức.",
+      "Tính chuẩn mực công quyền (Statutory Rigor): Tuân thủ nghiêm ngặt Luật Hải quan số 54/2014/QH13 và danh pháp nghiệp vụ VNACCS/VCIS.",
+      "Lưỡng phân sắc thái hoàn hảo (High-Contrast Dark/Light): Hoạt động liền mạch ở cả chế độ làm việc ban ngày (Light Slate) lẫn phòng trực ca đêm (Deep Midnight).",
+      "Phân lớp viền siêu mảnh (Hairline Layered Architecture): Phân tách các module thông qua đường viền 1px sắc nét và bề mặt tông màu, loại bỏ bóng mờ đục."
+    ],
+    "rules": [
+      {
+        "name": "The Statutory Lane Invariance Rule",
+        "body": "Ba màu phân luồng thông quan hải quan là bất biến theo luật định: Luồng Xanh (#10B981 - Miễn kiểm tra), Luồng Vàng (#F59E0B - Kiểm tra hồ sơ) và Luồng Đỏ (#EF4444 - Kiểm tra thực tế). Tuyệt đối không hoán đổi hoặc dùng cho trang trí.",
+        "section": "colors"
+      },
+      {
+        "name": "The Currency Color Binding Rule",
+        "body": "Kim ngạch ngoại tệ (USD) luôn gắn liền với hệ sắc Xanh Hải quan (#2563EB). Tiền thu ngân sách thuế quan (VND) luôn gắn liền với hệ sắc Tím than Indigo (#4F46E5).",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Number Integrity Rule",
+        "body": "Tất cả mọi con số biểu thị tiền tệ (USD, VND), số lượng tờ khai, sản lượng container (TEU) và tỷ lệ phần trăm (%) bắt buộc phải bật thuộc tính font-variant-numeric: tabular-nums.",
+        "section": "typography"
+      },
+      {
+        "name": "The Label Subtlety Rule",
+        "body": "Các nhãn mô tả siêu nhỏ (10px - 11px) luôn áp dụng uppercase, font-bold và tăng letter-spacing, đi kèm màu text-muted để tạo độ tương phản thứ bậc rõ ràng.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Fuzzy-Shadow Rule",
+        "body": "Cấm tuyệt đối việc áp dụng các lớp shadow-lg, shadow-xl hoặc shadow-2xl mờ rộng trên các thành phần hiển thị số liệu. Độ sâu trong giao diện nghiệp vụ phải sạch, gọn và dứt khoát.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do luôn định dạng số liệu tài chính và số lượng bằng font-variant-numeric: tabular-nums và căn lề phải đối với các cột số liệu tiền tệ.",
+      "Do giữ vững 3 màu phân luồng thông quan hải quan (Xanh: #10B981, Vàng: #F59E0B, Đỏ: #EF4444) theo đúng tiêu chuẩn pháp lý tại Điều 32 Luật Hải quan.",
+      "Do phân biệt rõ ràng màu sắc giữa Kim ngạch ngoại thương USD (#2563EB) và Thuế thu ngân sách VND (#4F46E5).",
+      "Do cung cấp phản hồi xúc giác tức thì (Micro-feedback) trong vòng 1.5s - 2s khi người dùng sao chép mã số thuế hoặc sao chép báo cáo AI.",
+      "Do hỗ trợ đầy đủ phím tắt bàn phím (/ tìm kiếm, D đổi theme, P xuất in, ? mở trợ giúp phím tắt) cho cán bộ phân tích thao tác nhanh."
+    ],
+    "donts": [
+      "Don't sử dụng màu xanh lá cây hoặc màu đỏ cho các thành phần biểu đồ thông thường không thuộc về phân luồng tờ khai để tránh gây hiểu nhầm về mức độ rủi ro nghiệp vụ.",
+      "Don't sử dụng đổ bóng lớn khuếch tán (shadow-xl, shadow-2xl) làm mờ và đục các vùng hiển thị số liệu dày đặc.",
+      "Don't chèn các khoảng đệm thừa thãi (padding quá lớn) làm giảm mật độ hiển thị dữ liệu điều hành trên mỗi màn hình.",
+      "Don't làm mất số 0 đầu tiên của Mã số thuế doanh nghiệp khi xuất dữ liệu ra file Excel/CSV.",
+      "Don't phá vỡ cấu trúc in ấn chuẩn vector A4 bằng cách sử dụng các thư viện chụp canvas dễ vỡ phông chữ tiếng Việt."
+    ]
+  }
+}

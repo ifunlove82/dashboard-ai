@@ -171,7 +171,7 @@ async function main() {
             [To_khai_do] [int] NULL,
             [Vi_pham] [int] NULL,
             [Thoi_gian_xu_ly_tb_phut] [numeric](10, 2) NULL,
-            CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED ([ID] ASC, [Ngay] ASC)
+            CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED ([ID] ASC)
           );
         `);
       }
@@ -320,6 +320,7 @@ async function main() {
         const itemId = crypto.randomUUID();
         const itemRequest = pool.request();
         itemRequest.input('ID', sql.UniqueIdentifier, itemId);
+        itemRequest.input('ID_ToKhai', sql.UniqueIdentifier, id);
         itemRequest.input('Ngay_dang_ky', sql.Date, dateStr);
         itemRequest.input('Loai_XNK', sql.NChar(4), loaiXNK);
         itemRequest.input('Nhom_hang', sql.NVarChar(50), comm.name);
@@ -338,12 +339,12 @@ async function main() {
 
         await itemRequest.query(`
           INSERT INTO rpHang (
-            ID, Ngay_dang_ky, Loai_XNK, Nhom_hang, Ma_HS, Ma_nuoc_XX, So_luong,
+            ID, ID_ToKhai, Ngay_dang_ky, Loai_XNK, Nhom_hang, Ma_HS, Ma_nuoc_XX, So_luong,
             Tri_gia_VND, Tri_gia_co_thue, So_tien_thue_XNK, So_tien_thue_V,
             So_tien_thue_T, So_tien_thue_M, So_tien_thue_B, So_tien_thue_G,
             Tong_thue
           ) VALUES (
-            @ID, @Ngay_dang_ky, @Loai_XNK, @Nhom_hang, @Ma_HS, @Ma_nuoc_XX, @So_luong,
+            @ID, @ID_ToKhai, @Ngay_dang_ky, @Loai_XNK, @Nhom_hang, @Ma_HS, @Ma_nuoc_XX, @So_luong,
             @Tri_gia_VND, @Tri_gia_co_thue, @So_tien_thue_XNK, @So_tien_thue_V,
             @So_tien_thue_T, @So_tien_thue_M, @So_tien_thue_B, @So_tien_thue_G,
             @Tong_thue

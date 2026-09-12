@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Receipt,
@@ -54,12 +54,14 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function DashboardLayout({
+function DashboardLayoutContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
 
   return (
     <div className="flex min-h-screen bg-slate-100/70 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased">
@@ -94,7 +96,7 @@ export default function DashboardLayout({
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={`${item.href}${query}`}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
                       isActive
                         ? "bg-blue-600 text-white font-semibold shadow-xs"
@@ -153,7 +155,7 @@ export default function DashboardLayout({
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={`${item.href}${query}`}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] whitespace-nowrap font-medium transition-all ${
                     isActive
                       ? "bg-blue-600 text-white font-semibold"
@@ -174,5 +176,17 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <React.Suspense fallback={<div className="flex min-h-screen bg-slate-100/70 items-center justify-center">Đang tải...</div>}>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </React.Suspense>
   );
 }

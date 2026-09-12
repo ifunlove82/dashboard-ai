@@ -13,6 +13,7 @@ GO
 
 CREATE TABLE [dbo].[rpHang](
 	[ID] [uniqueidentifier] NOT NULL,
+	[ID_ToKhai] [uniqueidentifier] NULL,
 	[Ngay_dang_ky] [date] NOT NULL,
 	[Loai_XNK] [nchar](4) NOT NULL,
 	[Nhom_hang] [nvarchar](50) NULL,
@@ -125,8 +126,7 @@ CREATE TABLE [dbo].[rpHieuSuatCongChuc](
 	[Thoi_gian_xu_ly_tb_phut] [numeric](10, 2) NULL,
  CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED 
 (
-	[ID] ASC,
-	[Ngay] ASC
+	[ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 )
 GO

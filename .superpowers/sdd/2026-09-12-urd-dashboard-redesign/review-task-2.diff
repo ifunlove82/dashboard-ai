@@ -1,0 +1,120 @@
+﻿8b95913 feat(api): implement v1 revenue and clearance endpoints
+
+ src/app/api/v1/clearance/route.ts | 45 ++++++++++++++++++++++++++++++  src/app/api/v1/revenue/route.ts   | 58 +++++++++++++++++++++++++++++++++++++++  2 files changed, 103 insertions(+)
+
+diff --git a/src/app/api/v1/clearance/route.ts b/src/app/api/v1/clearance/route.ts
+new file mode 100644
+index 0000000..ff0c23a
+--- /dev/null
++++ b/src/app/api/v1/clearance/route.ts
+@@ -0,0 +1,45 @@
++import { NextResponse } from 'next/server';
++import { getDbConnection, sql } from '@/lib/db';
++import { getMockClearance } from '@/lib/mockData';
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const branch = searchParams.get('branch') || 'ALL';
++
++  try {
++    const pool = await getDbConnection();
++    
++    const req = pool.request();
++    if (branch !== 'ALL') {
++      req.input('branch', sql.VarChar, branch);
++    }
++    const result = await req.query(`
++      SELECT 
++        COUNT(id) as totalInStats,
++        SUM(kimNgachUSD) as inStatsValueUSD
++      FROM rpToKhai
++      WHERE Trong_Thong_Ke = 1
++      ${branch !== 'ALL' ? 'AND maHQ = @branch' : ''}
++    `);
++
++    const data = {
++      isMock: false,
++      clearance: {
++        totalInStats: result.recordset[0]?.totalInStats || 0,
++        inStatsValueUSD: result.recordset[0]?.inStatsValueUSD || 0,
++      }
++    };
++
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: data
++    });
++  } catch (error) {
++    console.warn('Database failed, falling back to mock data', error);
++    const mockData = getMockClearance(undefined, undefined, branch);
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: mockData
++    });
++  }
++}
+diff --git a/src/app/api/v1/revenue/route.ts b/src/app/api/v1/revenue/route.ts
+new file mode 100644
+index 0000000..4a8f941
+--- /dev/null
++++ b/src/app/api/v1/revenue/route.ts
+@@ -0,0 +1,58 @@
++import { NextResponse } from 'next/server';
++import { getDbConnection, sql } from '@/lib/db';
++import { getMockRevenue } from '@/lib/mockData';
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const branch = searchParams.get('branch') || 'ALL';
++
++  try {
++    const pool = await getDbConnection();
++    
++    const req1 = pool.request();
++    if (branch !== 'ALL') {
++      req1.input('branch', sql.VarChar, branch);
++    }
++    const declarationsResult = await req1.query(`
++      SELECT 
++        COUNT(id) as totalDeclarations,
++        SUM(kimNgachUSD) as totalValueUSD,
++        SUM(tongThueThuKhacVND) as totalTaxVND
++      FROM rpToKhai
++      ${branch !== 'ALL' ? 'WHERE maHQ = @branch' : ''}
++    `);
++
++    const req2 = pool.request();
++    if (branch !== 'ALL') {
++      req2.input('branch', sql.VarChar, branch);
++    }
++    const phiResult = await req2.query(`
++      SELECT 
++        SUM(soTien) as totalPhiCSHTVND
++      FROM rpPhiCSHT
++      ${branch !== 'ALL' ? 'WHERE maHQ = @branch' : ''}
++    `);
++
++    const data = {
++      isMock: false,
++      kpis: {
++        totalDeclarations: declarationsResult.recordset[0]?.totalDeclarations || 0,
++        totalValueUSD: declarationsResult.recordset[0]?.totalValueUSD || 0,
++        totalTaxVND: declarationsResult.recordset[0]?.totalTaxVND || 0,
++        totalPhiCSHTVND: phiResult.recordset[0]?.totalPhiCSHTVND || 0,
++      }
++    };
++
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: data
++    });
++  } catch (error) {
++    console.warn('Database failed, falling back to mock data', error);
++    const mockData = getMockRevenue(undefined, undefined, branch);
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: mockData
++    });
++  }
++}
+

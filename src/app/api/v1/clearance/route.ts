@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDbConnection, sql } from '@/lib/db';
-import { getMockClearance } from '@/lib/mockData';
+
 
 function getDateRange(timeframe: string | null, start: string | null, end: string | null) {
   let startDate = start;
@@ -59,7 +59,6 @@ export async function GET(request: Request) {
       WHERE ${whereClause}
     `);
 
-    const mockDataRef = getMockClearance(startDate, endDate, branch);
     const row = result.recordset[0] || {};
     
     const exportValueUSD = row.exportValueUSD || 0;
@@ -68,8 +67,7 @@ export async function GET(request: Request) {
     const data = {
       isMock: false,
       branch: branch,
-      clearance: mockDataRef.clearance ? {
-        ...mockDataRef.clearance,
+      clearance: {
         totalInStats: row.totalInStats || 0,
         inStatsValueUSD: row.inStatsValueUSD || 0,
         totalOutOfStats: row.totalOutOfStats || 0,
@@ -79,21 +77,17 @@ export async function GET(request: Request) {
         importDeclarations: row.importDeclarations || 0,
         importValueUSD: importValueUSD,
         tradeBalanceUSD: exportValueUSD - importValueUSD,
-      } : undefined,
-      channels: mockDataRef.channels,
-      commodities: mockDataRef.commodities
+      }
     };
 
     return NextResponse.json({
       meta: { status: 200 },
       data: data
     });
-  } catch (error) {
-    console.warn('Database failed, falling back to mock data', error);
-    const mockData = getMockClearance(startDate, endDate, branch);
+  } catch (error: any) {
+    console.error('Database query failed:', error);
     return NextResponse.json({
-      meta: { status: 200 },
-      data: mockData
-    });
+      meta: { status: 500, error: error.message }
+    }, { status: 500 });
   }
 }

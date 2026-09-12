@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Bot, X, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function AIDrawer() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [insight, setInsight] = useState<string | null>(null);
@@ -24,11 +25,11 @@ export default function AIDrawer() {
       setIsLoading(true);
       setInsight(null);
 
-      let dataUrl = "/api/stats";
+      let dataUrl = `/api/stats?${searchParams.toString()}`;
       if (pathname.includes("/revenue")) {
-        dataUrl = "/api/v1/revenue";
+        dataUrl = `/api/v1/revenue?${searchParams.toString()}`;
       } else if (pathname.includes("/clearance")) {
-        dataUrl = "/api/v1/clearance";
+        dataUrl = `/api/v1/clearance?${searchParams.toString()}`;
       }
 
       // Fetch data for the current route
@@ -67,7 +68,7 @@ export default function AIDrawer() {
         setIsLoading(false);
       }
     }
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (isOpen) {

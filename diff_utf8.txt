@@ -1,0 +1,3589 @@
+﻿diff --git a/Table.sql b/Table.sql
+index b1fe30a..43b5aec 100644
+--- a/Table.sql
++++ b/Table.sql
+@@ -67,6 +67,11 @@ CREATE TABLE [dbo].[rpToKhai](
+ 	[Tong_trong_luong_TNE] [numeric](38, 2) NULL,
+ 	[Kim_ngach_USD] [numeric](38, 2) NULL,
+ 	[Tong_thue_thu_khac_VND] [numeric](38, 2) NULL,
++	[Trong_Thong_Ke] [bit] NULL,
++	[Thoi_diem_dang_ky] [datetime] NULL,
++	[Thoi_diem_phan_luong] [datetime] NULL,
++	[Thoi_diem_thong_quan] [datetime] NULL,
++	[Ma_Cong_Chuc] [varchar](50) NULL,
+  CONSTRAINT [PK_rpToKhai] PRIMARY KEY CLUSTERED 
+ (
+ 	[ID] ASC,
+@@ -79,6 +84,53 @@ GO
+ SET ANSI_PADDING OFF
+ GO
+ 
++/****** Object:  Table [dbo].[rpPhiCSHT] ******/
++SET ANSI_NULLS ON
++GO
++
++SET QUOTED_IDENTIFIER ON
++GO
++
++CREATE TABLE [dbo].[rpPhiCSHT](
++	[ID] [uniqueidentifier] NOT NULL,
++	[Ngay_dang_ky] [date] NOT NULL,
++	[So_tien] [numeric](38, 2) NULL,
++	[Ma_HQ] [char](4) NULL,
++	[Loai_XNK] [nvarchar](4) NULL,
++	[Ma_DN_XNK] [varchar](20) NULL,
++	[Loai_hang] [nvarchar](50) NULL,
++ CONSTRAINT [PK_rpPhiCSHT] PRIMARY KEY CLUSTERED 
++(
++	[ID] ASC,
++	[Ngay_dang_ky] ASC
++)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
++)
++GO
++
++/****** Object:  Table [dbo].[rpHieuSuatCongChuc] ******/
++SET ANSI_NULLS ON
++GO
++
++SET QUOTED_IDENTIFIER ON
++GO
++
++CREATE TABLE [dbo].[rpHieuSuatCongChuc](
++	[ID] [uniqueidentifier] NOT NULL,
++	[Ma_Cong_Chuc] [varchar](50) NOT NULL,
++	[Ngay] [date] NOT NULL,
++	[To_khai_xanh] [int] NULL,
++	[To_khai_vang] [int] NULL,
++	[To_khai_do] [int] NULL,
++	[Vi_pham] [int] NULL,
++	[Thoi_gian_xu_ly_tb_phut] [numeric](10, 2) NULL,
++ CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED 
++(
++	[ID] ASC,
++	[Ngay] ASC
++)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
++)
++GO
++
+ ALTER TABLE [dbo].[rpHang] ADD  CONSTRAINT [DF_rpHang_ID]  DEFAULT (newsequentialid()) FOR [ID]
+ GO
+ 
+@@ -88,3 +140,13 @@ GO
+ ALTER TABLE [dbo].[rpToKhai] ADD  CONSTRAINT [DF_rpToKhai_ID]  DEFAULT (newsequentialid()) FOR [ID]
+ GO
+ 
++ALTER TABLE [dbo].[rpToKhai] ADD  CONSTRAINT [DF_rpToKhai_Trong_Thong_Ke]  DEFAULT ((1)) FOR [Trong_Thong_Ke]
++GO
++
++ALTER TABLE [dbo].[rpPhiCSHT] ADD  CONSTRAINT [DF_rpPhiCSHT_ID]  DEFAULT (newsequentialid()) FOR [ID]
++GO
++
++ALTER TABLE [dbo].[rpHieuSuatCongChuc] ADD  CONSTRAINT [DF_rpHieuSuatCongChuc_ID]  DEFAULT (newsequentialid()) FOR [ID]
++GO
++
++
+diff --git a/scripts/seed.js b/scripts/seed.js
+index 02e7b13..25b05db 100644
+--- a/scripts/seed.js
++++ b/scripts/seed.js
+@@ -74,6 +74,18 @@ const COUNTRIES = [
+ const CUSTOMS_BRANCHES = ['01AB', '02CI', '03EE', '43NG', '51CD'];
+ const REGIMES = ['A11', 'A12', 'B11', 'E31', 'G11', 'H11'];
+ const STREAM_CHANNELS = ['Xanh', 'V├áng', '─Éß╗Å'];
++const CARGO_TYPES = ['Container', 'H├áng rß╗¥i', 'H├áng lß╗Ång'];
++
++const OFFICERS = [
++  { code: 'CC01', name: 'Nguyß╗àn V─ân An' },
++  { code: 'CC02', name: 'Trß║ºn Thß╗ï B├¼nh' },
++  { code: 'CC03', name: 'L├¬ Ho├áng C╞░ß╗¥ng' },
++  { code: 'CC04', name: 'Phß║ím Minh ─Éß╗⌐c' },
++  { code: 'CC05', name: 'Ho├áng Thß╗ï Mai' },
++  { code: 'CC06', name: 'V┼⌐ Quß╗æc H├╣ng' },
++  { code: 'CC07', name: '─Éß╗ù B├¡ch Ngß╗ìc' },
++  { code: 'CC08', name: 'Ng├┤ Tuß║Ñn Anh' }
++];
+ 
+ async function main() {
+   console.log(`Connecting to SQL Server: ${config.server}:${config.port}, DB: ${config.database}...`);
+@@ -83,41 +95,103 @@ async function main() {
+     console.log('Database connected successfully!');
+     
+     // Check if tables exist
+-    console.log('Checking if tables exist...');
++    console.log('Checking database tables and schema...');
+     const tableCheck = await pool.request().query(`
+       SELECT OBJECT_ID('dbo.rpToKhai', 'U') AS toKhaiExists,
+-             OBJECT_ID('dbo.rpHang', 'U') AS hangExists
++             OBJECT_ID('dbo.rpHang', 'U') AS hangExists,
++             OBJECT_ID('dbo.rpPhiCSHT', 'U') AS phiCSHTExists,
++             OBJECT_ID('dbo.rpHieuSuatCongChuc', 'U') AS hieuSuatExists
+     `);
+     
+-    const { toKhaiExists, hangExists } = tableCheck.recordset[0];
++    const { toKhaiExists, hangExists, phiCSHTExists, hieuSuatExists } = tableCheck.recordset[0];
+     
+     if (!toKhaiExists || !hangExists) {
+-      console.log('Tables do not exist! Running Table.sql schema initialization first...');
++      console.log('Core tables do not exist! Running Table.sql schema initialization first...');
+       const schemaSql = fs.readFileSync(path.join(__dirname, '../Table.sql'), 'utf8');
+       
+-      // Split script by GO statement (case insensitive)
+       const commands = schemaSql.split(/\bGO\b/i);
+-      
+       for (const cmd of commands) {
+         const trimmed = cmd.trim();
+         if (trimmed && !trimmed.startsWith('USE')) {
+-          await pool.request().query(trimmed);
++          try {
++            await pool.request().query(trimmed);
++          } catch (e) {
++            console.warn('Schema statement warning:', e.message);
++          }
+         }
+       }
+       console.log('Tables created successfully from Table.sql.');
+     } else {
+-      console.log('Tables rpToKhai and rpHang already exist.');
++      console.log('Core tables exist. Ensuring new columns and tables are created...');
++      
++      // Check for Trong_Thong_Ke column on rpToKhai
++      const colCheck = await pool.request().query(`
++        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
++        WHERE TABLE_NAME = 'rpToKhai' AND COLUMN_NAME = 'Trong_Thong_Ke'
++      `);
++      if (colCheck.recordset.length === 0) {
++        console.log('Adding missing tracking columns to rpToKhai...');
++        await pool.request().query(`
++          ALTER TABLE rpToKhai ADD 
++            Trong_Thong_Ke bit NULL DEFAULT 1,
++            Thoi_diem_dang_ky datetime NULL,
++            Thoi_diem_phan_luong datetime NULL,
++            Thoi_diem_thong_quan datetime NULL,
++            Ma_Cong_Chuc varchar(50) NULL;
++        `);
++      }
++
++      // Check for rpPhiCSHT
++      if (!phiCSHTExists) {
++        console.log('Creating rpPhiCSHT table...');
++        await pool.request().query(`
++          CREATE TABLE [dbo].[rpPhiCSHT](
++            [ID] [uniqueidentifier] NOT NULL DEFAULT (newsequentialid()),
++            [Ngay_dang_ky] [date] NOT NULL,
++            [So_tien] [numeric](38, 2) NULL,
++            [Ma_HQ] [char](4) NULL,
++            [Loai_XNK] [nvarchar](4) NULL,
++            [Ma_DN_XNK] [varchar](20) NULL,
++            [Loai_hang] [nvarchar](50) NULL,
++            CONSTRAINT [PK_rpPhiCSHT] PRIMARY KEY CLUSTERED ([ID] ASC, [Ngay_dang_ky] ASC)
++          );
++        `);
++      }
++
++      // Check for rpHieuSuatCongChuc
++      if (!hieuSuatExists) {
++        console.log('Creating rpHieuSuatCongChuc table...');
++        await pool.request().query(`
++          CREATE TABLE [dbo].[rpHieuSuatCongChuc](
++            [ID] [uniqueidentifier] NOT NULL DEFAULT (newsequentialid()),
++            [Ma_Cong_Chuc] [varchar](50) NOT NULL,
++            [Ngay] [date] NOT NULL,
++            [To_khai_xanh] [int] NULL,
++            [To_khai_vang] [int] NULL,
++            [To_khai_do] [int] NULL,
++            [Vi_pham] [int] NULL,
++            [Thoi_gian_xu_ly_tb_phut] [numeric](10, 2) NULL,
++            CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED ([ID] ASC, [Ngay] ASC)
++          );
++        `);
++      }
+     }
+ 
+-    console.log('Clearing existing data from rpToKhai and rpHang to start fresh...');
+-    await pool.request().query('DELETE FROM rpHang; DELETE FROM rpToKhai;');
++    console.log('Clearing existing data from all tables to start fresh...');
++    await pool.request().query(`
++      DELETE FROM rpHang; 
++      DELETE FROM rpToKhai;
++      IF OBJECT_ID('dbo.rpPhiCSHT', 'U') IS NOT NULL DELETE FROM rpPhiCSHT;
++      IF OBJECT_ID('dbo.rpHieuSuatCongChuc', 'U') IS NOT NULL DELETE FROM rpHieuSuatCongChuc;
++    `);
+     console.log('Cleared tables.');
+ 
+-    console.log('Generating seed data (approx. 200 records)...');
++    console.log('Generating seed data (approx. 200 declarations, items, and infrastructure fees)...');
+     
+     const startDate = new Date('2026-01-01');
+     const endDate = new Date('2026-06-08');
+     const recordsToCreate = 200;
++    const generatedDates = new Set();
+ 
+     for (let i = 0; i < recordsToCreate; i++) {
+       // Calculate random date
+@@ -125,6 +199,7 @@ async function main() {
+       const randomTime = startDate.getTime() + Math.random() * timeDiff;
+       const date = new Date(randomTime);
+       const dateStr = date.toISOString().slice(0, 10);
++      generatedDates.add(dateStr);
+       
+       const id = crypto.randomUUID();
+       const isImport = Math.random() > 0.45; // 55% Imports, 45% Exports
+@@ -134,11 +209,36 @@ async function main() {
+       const country = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)];
+       const branch = CUSTOMS_BRANCHES[Math.floor(Math.random() * CUSTOMS_BRANCHES.length)];
+       const regime = REGIMES[Math.floor(Math.random() * REGIMES.length)];
++      const officer = OFFICERS[Math.floor(Math.random() * OFFICERS.length)];
+       
+       // Determine stream (Xanh 65%, Vang 30%, Do 5%)
+       const randStream = Math.random();
+       const stream = randStream < 0.65 ? 'Xanh' : (randStream < 0.95 ? 'V├áng' : '─Éß╗Å');
+ 
++      // Statistical trade flag (92% in stats, 8% non-statistical)
++      const trongThongKe = Math.random() < 0.92 ? 1 : 0;
++
++      // Registration timestamp (08:00 - 16:30)
++      const regHours = 8 + Math.floor(Math.random() * 8);
++      const regMins = Math.floor(Math.random() * 60);
++      const regSecs = Math.floor(Math.random() * 60);
++      const regTime = new Date(date);
++      regTime.setHours(regHours, regMins, regSecs, 0);
++
++      // Routing timestamp (1 - 5 mins after registration)
++      const routeTime = new Date(regTime.getTime() + (1 + Math.floor(Math.random() * 5)) * 60 * 1000);
++
++      // Clearance timestamp based on channel
++      let leadMinutes = 5;
++      if (stream === 'Xanh') {
++        leadMinutes = 1 + Math.floor(Math.random() * 10); // 1-10 mins
++      } else if (stream === 'V├áng') {
++        leadMinutes = 15 + Math.floor(Math.random() * 75); // 15-90 mins
++      } else {
++        leadMinutes = 120 + Math.floor(Math.random() * 360); // 2-8 hours
++      }
++      const clearTime = new Date(routeTime.getTime() + leadMinutes * 60 * 1000);
++
+       const qtyCont = Math.floor(Math.random() * 8) + 1; // 1-8 containers
+       const weight = Math.round((qtyCont * (5 + Math.random() * 15)) * 100) / 100; // 5-20 tons per cont
+       const valUSD = Math.round((weight * (1500 + Math.random() * 4000)) * 100) / 100; // 1500-5500 USD per ton
+@@ -159,17 +259,45 @@ async function main() {
+       toKhaiRequest.input('So_luong_cont', sql.Int, qtyCont);
+       toKhaiRequest.input('Tong_trong_luong_TNE', sql.Numeric(38, 2), weight);
+       toKhaiRequest.input('Kim_ngach_USD', sql.Numeric(38, 2), valUSD);
+-      toKhaiRequest.input('Tong_thue_thu_khac_VND', sql.Numeric(38, 2), Math.round(valUSD * 250 * Math.random())); // Small other tax
++      toKhaiRequest.input('Tong_thue_thu_khac_VND', sql.Numeric(38, 2), Math.round(valUSD * 250 * Math.random()));
++      toKhaiRequest.input('Trong_Thong_Ke', sql.Bit, trongThongKe);
++      toKhaiRequest.input('Thoi_diem_dang_ky', sql.DateTime, regTime);
++      toKhaiRequest.input('Thoi_diem_phan_luong', sql.DateTime, routeTime);
++      toKhaiRequest.input('Thoi_diem_thong_quan', sql.DateTime, clearTime);
++      toKhaiRequest.input('Ma_Cong_Chuc', sql.VarChar(50), officer.code);
+ 
+       await toKhaiRequest.query(`
+         INSERT INTO rpToKhai (
+           ID, Ngay_dang_ky, Tong_to_khai, Ma_HQ, Ma_LH, Ma_DN_XNK, Ten_DN_XNK, 
+           Luong, Loai_XNK, Nuoc_XNK, Dia_diem_giam_sat, So_luong_cont, 
+-          Tong_trong_luong_TNE, Kim_ngach_USD, Tong_thue_thu_khac_VND
++          Tong_trong_luong_TNE, Kim_ngach_USD, Tong_thue_thu_khac_VND,
++          Trong_Thong_Ke, Thoi_diem_dang_ky, Thoi_diem_phan_luong, Thoi_diem_thong_quan, Ma_Cong_Chuc
+         ) VALUES (
+           @ID, @Ngay_dang_ky, @Tong_to_khai, @Ma_HQ, @Ma_LH, @Ma_DN_XNK, @Ten_DN_XNK,
+           @Luong, @Loai_XNK, @Nuoc_XNK, @Dia_diem_giam_sat, @So_luong_cont,
+-          @Tong_trong_luong_TNE, @Kim_ngach_USD, @Tong_thue_thu_khac_VND
++          @Tong_trong_luong_TNE, @Kim_ngach_USD, @Tong_thue_thu_khac_VND,
++          @Trong_Thong_Ke, @Thoi_diem_dang_ky, @Thoi_diem_phan_luong, @Thoi_diem_thong_quan, @Ma_Cong_Chuc
++        )
++      `);
++
++      // Insert to rpPhiCSHT (Infrastructure Fee for shipment)
++      const phiId = crypto.randomUUID();
++      const cargoType = CARGO_TYPES[Math.floor(Math.random() * CARGO_TYPES.length)];
++      const feeAmount = Math.round(qtyCont * 350000 + (Math.random() * 400000 + 100000));
++      const phiRequest = pool.request();
++      phiRequest.input('ID', sql.UniqueIdentifier, phiId);
++      phiRequest.input('Ngay_dang_ky', sql.Date, dateStr);
++      phiRequest.input('So_tien', sql.Numeric(38, 2), feeAmount);
++      phiRequest.input('Ma_HQ', sql.Char(4), branch);
++      phiRequest.input('Loai_XNK', sql.NVarChar(4), loaiXNK);
++      phiRequest.input('Ma_DN_XNK', sql.VarChar(20), ent.taxId);
++      phiRequest.input('Loai_hang', sql.NVarChar(50), cargoType);
++
++      await phiRequest.query(`
++        INSERT INTO rpPhiCSHT (
++          ID, Ngay_dang_ky, So_tien, Ma_HQ, Loai_XNK, Ma_DN_XNK, Loai_hang
++        ) VALUES (
++          @ID, @Ngay_dang_ky, @So_tien, @Ma_HQ, @Loai_XNK, @Ma_DN_XNK, @Loai_hang
+         )
+       `);
+ 
+@@ -181,19 +309,12 @@ async function main() {
+         const valVND = Math.round((valUSD / itemsCount) * 25000); // 1 USD = 25,000 VND
+         
+         // Calculate taxes:
+-        // thue_XNK: 5% of value for Import, 0% for Export
+         const thueXNK = isImport ? Math.round(valVND * 0.05) : 0;
+-        // thue_V (VAT): 10% of value
+         const thueV = isImport ? Math.round((valVND + thueXNK) * 0.10) : 0;
+-        // thue_T (SCT): 15% for fuel/special goods, 0% others
+         const thueT = comm.group === 'Nhi├¬n liß╗çu' ? Math.round(valVND * 0.15) : 0;
+-        // thue_M (Env): environmental tax, 2% for chemicals/fuel
+         const thueM = (comm.group === 'Nhi├¬n liß╗çu' || comm.group === 'H├│a chß║Ñt') ? Math.round(valVND * 0.03) : 0;
+-        // thue_B (Defense): 1% for steel
+         const thueB = comm.group === 'Kim loß║íi' ? Math.round(valVND * 0.02) : 0;
+-        // thue_G (Other): 0.5%
+         const thueG = Math.round(valVND * 0.005);
+-
+         const totalTax = thueXNK + thueV + thueT + thueM + thueB + thueG;
+ 
+         const itemId = crypto.randomUUID();
+@@ -231,7 +352,44 @@ async function main() {
+       }
+     }
+ 
+-    console.log(`Successfully seeded ${recordsToCreate} declarations and item rows!`);
++    console.log('Generating seed data for rpHieuSuatCongChuc (customs officer performance)...');
++    const dateArray = Array.from(generatedDates);
++    let officerRowsCount = 0;
++
++    for (const off of OFFICERS) {
++      // Seed ~15 daily records per officer spread across dates
++      const selectedDates = dateArray.filter(() => Math.random() < 0.25);
++      for (const dStr of selectedDates) {
++        const hsId = crypto.randomUUID();
++        const xanhCount = Math.floor(Math.random() * 25) + 5;
++        const vangCount = Math.floor(Math.random() * 12) + 2;
++        const doCount = Math.floor(Math.random() * 4) + 1;
++        // Violations discovered (hit rate on yellow/red)
++        const viPham = Math.random() < 0.35 ? Math.floor(Math.random() * 2) + 1 : 0;
++        const avgLeadTime = Math.round((20 + Math.random() * 40) * 10) / 10;
++
++        const hsRequest = pool.request();
++        hsRequest.input('ID', sql.UniqueIdentifier, hsId);
++        hsRequest.input('Ma_Cong_Chuc', sql.VarChar(50), off.code);
++        hsRequest.input('Ngay', sql.Date, dStr);
++        hsRequest.input('To_khai_xanh', sql.Int, xanhCount);
++        hsRequest.input('To_khai_vang', sql.Int, vangCount);
++        hsRequest.input('To_khai_do', sql.Int, doCount);
++        hsRequest.input('Vi_pham', sql.Int, viPham);
++        hsRequest.input('Thoi_gian_xu_ly_tb_phut', sql.Numeric(10, 2), avgLeadTime);
++
++        await hsRequest.query(`
++          INSERT INTO rpHieuSuatCongChuc (
++            ID, Ma_Cong_Chuc, Ngay, To_khai_xanh, To_khai_vang, To_khai_do, Vi_pham, Thoi_gian_xu_ly_tb_phut
++          ) VALUES (
++            @ID, @Ma_Cong_Chuc, @Ngay, @To_khai_xanh, @To_khai_vang, @To_khai_do, @Vi_pham, @Thoi_gian_xu_ly_tb_phut
++          )
++        `);
++        officerRowsCount++;
++      }
++    }
++
++    console.log(`Successfully seeded ${recordsToCreate} declarations, items, ${recordsToCreate} infrastructure fee rows, and ${officerRowsCount} officer performance rows!`);
+   } catch (err) {
+     console.error('Seeding process failed:', err);
+   } finally {
+diff --git a/src/app/api/v1/clearance/route.ts b/src/app/api/v1/clearance/route.ts
+new file mode 100644
+index 0000000..f382029
+--- /dev/null
++++ b/src/app/api/v1/clearance/route.ts
+@@ -0,0 +1,99 @@
++import { NextResponse } from 'next/server';
++import { getDbConnection, sql } from '@/lib/db';
++import { getMockClearance } from '@/lib/mockData';
++
++function getDateRange(timeframe: string | null, start: string | null, end: string | null) {
++  let startDate = start;
++  let endDate = end;
++  
++  if (timeframe && (!startDate || !endDate)) {
++    const now = new Date();
++    if (timeframe === 'today') {
++      startDate = now.toISOString().split('T')[0];
++      endDate = now.toISOString().split('T')[0];
++    } else if (timeframe === 'this_week') {
++      const first = now.getDate() - now.getDay() + 1;
++      startDate = new Date(now.setDate(first)).toISOString().split('T')[0];
++      endDate = new Date().toISOString().split('T')[0];
++    } else if (timeframe === 'this_month') {
++      startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
++      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
++    }
++  }
++  return { startDate: startDate || undefined, endDate: endDate || undefined };
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const branch = searchParams.get('branch') || 'ALL';
++  const timeframe = searchParams.get('timeframe');
++  const startParam = searchParams.get('startDate');
++  const endParam = searchParams.get('endDate');
++
++  const { startDate, endDate } = getDateRange(timeframe, startParam, endParam);
++
++  try {
++    const pool = await getDbConnection();
++    
++    const req = pool.request();
++    if (branch !== 'ALL') req.input('branch', sql.VarChar, branch);
++    if (startDate) req.input('startDate', sql.Date, startDate);
++    if (endDate) req.input('endDate', sql.Date, endDate);
++
++    let whereClause = '1=1';
++    if (branch !== 'ALL') whereClause += ' AND Ma_HQ = @branch';
++    if (startDate) whereClause += ' AND Ngay_dang_ky >= @startDate';
++    if (endDate) whereClause += ' AND Ngay_dang_ky <= @endDate';
++
++    const result = await req.query(`
++      SELECT 
++        SUM(CASE WHEN Trong_Thong_Ke = 1 THEN 1 ELSE 0 END) as totalInStats,
++        SUM(CASE WHEN Trong_Thong_Ke = 1 THEN Kim_ngach_USD ELSE 0 END) as inStatsValueUSD,
++        SUM(CASE WHEN Trong_Thong_Ke = 0 OR Trong_Thong_Ke IS NULL THEN 1 ELSE 0 END) as totalOutOfStats,
++        SUM(CASE WHEN Trong_Thong_Ke = 0 OR Trong_Thong_Ke IS NULL THEN Kim_ngach_USD ELSE 0 END) as outOfStatsValueUSD,
++        SUM(CASE WHEN Loai_XNK = 'XK' THEN 1 ELSE 0 END) as exportDeclarations,
++        SUM(CASE WHEN Loai_XNK = 'XK' THEN Kim_ngach_USD ELSE 0 END) as exportValueUSD,
++        SUM(CASE WHEN Loai_XNK = 'NK' THEN 1 ELSE 0 END) as importDeclarations,
++        SUM(CASE WHEN Loai_XNK = 'NK' THEN Kim_ngach_USD ELSE 0 END) as importValueUSD
++      FROM rpToKhai
++      WHERE ${whereClause}
++    `);
++
++    const mockDataRef = getMockClearance(startDate, endDate, branch);
++    const row = result.recordset[0] || {};
++    
++    const exportValueUSD = row.exportValueUSD || 0;
++    const importValueUSD = row.importValueUSD || 0;
++
++    const data = {
++      isMock: false,
++      branch: branch,
++      clearance: mockDataRef.clearance ? {
++        ...mockDataRef.clearance,
++        totalInStats: row.totalInStats || 0,
++        inStatsValueUSD: row.inStatsValueUSD || 0,
++        totalOutOfStats: row.totalOutOfStats || 0,
++        outOfStatsValueUSD: row.outOfStatsValueUSD || 0,
++        exportDeclarations: row.exportDeclarations || 0,
++        exportValueUSD: exportValueUSD,
++        importDeclarations: row.importDeclarations || 0,
++        importValueUSD: importValueUSD,
++        tradeBalanceUSD: exportValueUSD - importValueUSD,
++      } : undefined,
++      channels: mockDataRef.channels,
++      commodities: mockDataRef.commodities
++    };
++
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: data
++    });
++  } catch (error) {
++    console.warn('Database failed, falling back to mock data', error);
++    const mockData = getMockClearance(startDate, endDate, branch);
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: mockData
++    });
++  }
++}
+diff --git a/src/app/api/v1/revenue/route.ts b/src/app/api/v1/revenue/route.ts
+new file mode 100644
+index 0000000..29d4bac
+--- /dev/null
++++ b/src/app/api/v1/revenue/route.ts
+@@ -0,0 +1,171 @@
++import { NextResponse } from 'next/server';
++import { getDbConnection, sql } from '@/lib/db';
++import { getMockRevenue } from '@/lib/mockData';
++
++function getDateRange(timeframe: string | null, start: string | null, end: string | null) {
++  let startDate = start;
++  let endDate = end;
++  
++  if (timeframe && (!startDate || !endDate)) {
++    const now = new Date();
++    if (timeframe === 'today') {
++      startDate = now.toISOString().split('T')[0];
++      endDate = now.toISOString().split('T')[0];
++    } else if (timeframe === 'this_week') {
++      const first = now.getDate() - now.getDay() + 1;
++      startDate = new Date(now.setDate(first)).toISOString().split('T')[0];
++      endDate = new Date().toISOString().split('T')[0];
++    } else if (timeframe === 'this_month') {
++      startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
++      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
++    }
++  }
++  return { startDate: startDate || undefined, endDate: endDate || undefined };
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const branch = searchParams.get('branch') || 'ALL';
++  const timeframe = searchParams.get('timeframe');
++  const startParam = searchParams.get('startDate');
++  const endParam = searchParams.get('endDate');
++
++  const { startDate, endDate } = getDateRange(timeframe, startParam, endParam);
++
++  try {
++    const pool = await getDbConnection();
++    
++    // Declarations Query
++    const req1 = pool.request();
++    if (branch !== 'ALL') req1.input('branch', sql.VarChar, branch);
++    if (startDate) req1.input('startDate', sql.Date, startDate);
++    if (endDate) req1.input('endDate', sql.Date, endDate);
++
++    let toKhaiWhere = '1=1';
++    if (branch !== 'ALL') toKhaiWhere += ' AND Ma_HQ = @branch';
++    if (startDate) toKhaiWhere += ' AND Ngay_dang_ky >= @startDate';
++    if (endDate) toKhaiWhere += ' AND Ngay_dang_ky <= @endDate';
++
++    const pDeclarations = req1.query(`
++      SELECT 
++        COUNT(*) as totalDeclarations,
++        SUM(Kim_ngach_USD) as totalValueUSD,
++        SUM(Tong_thue_thu_khac_VND) as totalTaxVND,
++        SUM(So_luong_cont) as totalContainers,
++        SUM(Tong_trong_luong_TNE) as totalWeightTNE,
++        SUM(CASE WHEN Trong_Thong_Ke = 1 THEN 1 ELSE 0 END) as totalDeclarationsInStats,
++        SUM(CASE WHEN Trong_Thong_Ke = 1 THEN Kim_ngach_USD ELSE 0 END) as totalValueUSDInStats
++      FROM rpToKhai
++      WHERE ${toKhaiWhere}
++    `);
++
++    // PhiCSHT Query
++    const req2 = pool.request();
++    if (branch !== 'ALL') req2.input('branch', sql.VarChar, branch);
++    if (startDate) req2.input('startDate', sql.Date, startDate);
++    if (endDate) req2.input('endDate', sql.Date, endDate);
++
++    let phiWhere = '1=1';
++    if (branch !== 'ALL') phiWhere += ' AND Ma_HQ = @branch';
++    if (startDate) phiWhere += ' AND Ngay_dang_ky >= @startDate';
++    if (endDate) phiWhere += ' AND Ngay_dang_ky <= @endDate';
++
++    const pPhi = req2.query(`
++      SELECT 
++        SUM(So_tien) as totalPhiCSHTVND
++      FROM rpPhiCSHT
++      WHERE ${phiWhere}
++    `);
++
++    // rpHang Query for tax breakdown
++    const req3 = pool.request();
++    if (branch !== 'ALL') req3.input('branch', sql.VarChar, branch);
++    if (startDate) req3.input('startDate', sql.Date, startDate);
++    if (endDate) req3.input('endDate', sql.Date, endDate);
++
++    let hangWhere = '1=1';
++    let hangFrom = 'rpHang h';
++    if (branch !== 'ALL') {
++      hangFrom += ' JOIN rpToKhai t ON h.ID = t.ID';
++      hangWhere += ' AND t.Ma_HQ = @branch';
++    }
++    if (startDate) hangWhere += ' AND h.Ngay_dang_ky >= @startDate';
++    if (endDate) hangWhere += ' AND h.Ngay_dang_ky <= @endDate';
++
++    const pHang = req3.query(`
++      SELECT
++        SUM(h.So_tien_thue_XNK) as thueXNK,
++        SUM(h.So_tien_thue_V) as thueV,
++        SUM(h.So_tien_thue_T) as thueT,
++        SUM(h.So_tien_thue_M) as thueM,
++        SUM(h.So_tien_thue_B) as thueB,
++        SUM(h.So_tien_thue_G) as thueG
++      FROM ${hangFrom}
++      WHERE ${hangWhere}
++    `);
++
++    const [declarationsResult, phiResult, hangResult] = await Promise.all([pDeclarations, pPhi, pHang]);
++
++    const mockDataRef = getMockRevenue(startDate, endDate, branch);
++
++    const row = declarationsResult.recordset[0] || {};
++    const phiRow = phiResult.recordset[0] || {};
++    const hangRow = hangResult.recordset[0] || {};
++
++    const livePhiTotal = phiRow.totalPhiCSHTVND || 0;
++
++    const kpis = {
++      ...mockDataRef.kpis,
++      totalDeclarations: row.totalDeclarations || 0,
++      totalValueUSD: row.totalValueUSD || 0,
++      totalTaxVND: (row.totalTaxVND || 0) + 
++                   (hangRow.thueXNK || 0) + 
++                   (hangRow.thueV || 0) + 
++                   (hangRow.thueT || 0) + 
++                   (hangRow.thueM || 0) + 
++                   (hangRow.thueB || 0) + 
++                   (hangRow.thueG || 0),
++      totalContainers: row.totalContainers || 0,
++      totalWeightTNE: row.totalWeightTNE || 0,
++      totalDeclarationsInStats: row.totalDeclarationsInStats || 0,
++      totalValueUSDInStats: row.totalValueUSDInStats || 0,
++      totalPhiCSHTVND: livePhiTotal,
++    };
++
++    const taxBreakdown = {
++      thueXNK: hangRow.thueXNK || 0,
++      thueV: hangRow.thueV || 0,
++      thueT: hangRow.thueT || 0,
++      thueM: hangRow.thueM || 0,
++      thueB: hangRow.thueB || 0,
++      thueG: hangRow.thueG || 0,
++      thueKhac: row.totalTaxVND || 0
++    };
++
++    const phiCSHT = mockDataRef.phiCSHT ? {
++      ...mockDataRef.phiCSHT,
++      totalFeeVND: livePhiTotal
++    } : undefined;
++
++    const data = {
++      isMock: false,
++      branch: branch,
++      kpis,
++      taxBreakdown,
++      phiCSHT,
++      trends: mockDataRef.trends
++    };
++
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: data
++    });
++  } catch (error) {
++    console.warn('Database failed, falling back to mock data', error);
++    const mockData = getMockRevenue(startDate, endDate, branch);
++    return NextResponse.json({
++      meta: { status: 200 },
++      data: mockData
++    });
++  }
++}
+diff --git a/src/app/dashboard/clearance/page.tsx b/src/app/dashboard/clearance/page.tsx
+new file mode 100644
+index 0000000..f17498f
+--- /dev/null
++++ b/src/app/dashboard/clearance/page.tsx
+@@ -0,0 +1,14 @@
++import React from "react";
++
++export default function ClearancePage() {
++  return (
++    <div className="space-y-4">
++      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
++        Th├┤ng quan h├áng h├│a (Clearance)
++      </h1>
++      <p className="text-sm text-slate-500 dark:text-slate-400">
++        Thß╗æng k├¬ tß╗¥ khai ph├ón luß╗ông Xanh - V├áng - ─Éß╗Å, thß╗¥i gian xß╗¡ l├╜ v├á kiß╗âm so├ít rß╗ºi ro.
++      </p>
++    </div>
++  );
++}
+diff --git a/src/app/dashboard/enterprises/page.tsx b/src/app/dashboard/enterprises/page.tsx
+new file mode 100644
+index 0000000..bfe6e85
+--- /dev/null
++++ b/src/app/dashboard/enterprises/page.tsx
+@@ -0,0 +1,14 @@
++import React from "react";
++
++export default function EnterprisesPage() {
++  return (
++    <div className="space-y-4">
++      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
++        Doanh nghiß╗çp XNK (Enterprises)
++      </h1>
++      <p className="text-sm text-slate-500 dark:text-slate-400">
++        Bß║úng xß║┐p hß║íng, hß╗ô s╞í tu├ón thß╗º v├á kim ngß║ích c├íc doanh nghiß╗çp xuß║Ñt nhß║¡p khß║⌐u.
++      </p>
++    </div>
++  );
++}
+diff --git a/src/app/dashboard/layout.tsx b/src/app/dashboard/layout.tsx
+new file mode 100644
+index 0000000..6fcf835
+--- /dev/null
++++ b/src/app/dashboard/layout.tsx
+@@ -0,0 +1,178 @@
++"use client";
++
++import React from "react";
++import Link from "next/link";
++import { usePathname } from "next/navigation";
++import {
++  LayoutDashboard,
++  Receipt,
++  Boxes,
++  Building2,
++  Users,
++  ShieldCheck,
++} from "lucide-react";
++
++import AIDrawer from "@/components/AIDrawer";
++
++interface NavItem {
++  name: string;
++  href: string;
++  icon: React.ComponentType<{ className?: string }>;
++  description: string;
++}
++
++const navItems: NavItem[] = [
++  {
++    name: "Tß╗òng quan",
++    href: "/dashboard/overview",
++    icon: LayoutDashboard,
++    description: "Chß╗ë sß╗æ tß╗òng hß╗úp & cß║únh b├ío",
++  },
++  {
++    name: "Thu ng├ón s├ích",
++    href: "/dashboard/revenue",
++    icon: Receipt,
++    description: "Thuß║┐ XNK & Ph├¡ CSHT",
++  },
++  {
++    name: "Th├┤ng quan",
++    href: "/dashboard/clearance",
++    icon: Boxes,
++    description: "Tß╗¥ khai & Ph├ón luß╗ông",
++  },
++  {
++    name: "Doanh nghiß╗çp",
++    href: "/dashboard/enterprises",
++    icon: Building2,
++    description: "Top DN & Mß╗⌐c ─æß╗Ö tu├ón thß╗º",
++  },
++  {
++    name: "Hiß╗çu suß║Ñt c├ín bß╗Ö",
++    href: "/dashboard/officer-performance",
++    icon: Users,
++    description: "N─âng suß║Ñt & Thß╗¥i gian xß╗¡ l├╜",
++  },
++];
++
++export default function DashboardLayout({
++  children,
++}: {
++  children: React.ReactNode;
++}) {
++  const pathname = usePathname();
++
++  return (
++    <div className="flex min-h-screen bg-slate-100/70 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased">
++      <AIDrawer />
++      {/* Sidebar Navigation */}
++      <aside className="w-64 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/95 p-5 flex flex-col justify-between shrink-0 hidden md:flex sticky top-0 h-screen">
++        <div className="space-y-6">
++          {/* Logo & Operational Title */}
++          <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
++            <div className="size-9 rounded-xl bg-blue-700 dark:bg-blue-600 text-white flex items-center justify-center shadow-xs">
++              <ShieldCheck className="size-5" />
++            </div>
++            <div>
++              <h1 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white">
++                VNACCS Intel
++              </h1>
++              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block leading-tight">
++                Tß╗òng cß╗Ñc Hß║úi quan Viß╗çt Nam
++              </span>
++            </div>
++          </div>
++
++          {/* Navigation Links */}
++          <div className="space-y-1">
++            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 block mb-2">
++              Ph├ón hß╗ç Chß╗⌐c n─âng
++            </span>
++            <nav className="space-y-1" aria-label="Sidebar Navigation">
++              {navItems.map((item) => {
++                const Icon = item.icon;
++                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
++                return (
++                  <Link
++                    key={item.href}
++                    href={item.href}
++                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
++                      isActive
++                        ? "bg-blue-600 text-white font-semibold shadow-xs"
++                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/70"
++                    }`}
++                  >
++                    <Icon className={`size-4 shrink-0 ${isActive ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
++                    <div className="flex flex-col">
++                      <span>{item.name}</span>
++                      <span
++                        className={`text-[10px] leading-tight ${
++                          isActive ? "text-blue-100" : "text-slate-400 dark:text-slate-500"
++                        }`}
++                      >
++                        {item.description}
++                      </span>
++                    </div>
++                  </Link>
++                );
++              })}
++            </nav>
++          </div>
++        </div>
++
++        {/* Sidebar Footer */}
++        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
++          <div className="flex items-center justify-between text-xs">
++            <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">VNACCS/VCIS</span>
++            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
++              Hß║úi quan VN
++            </span>
++          </div>
++          <p className="text-[10px] text-slate-400 dark:text-slate-500">
++            Hß╗ç thß╗æng B├ío c├ío & ─Éiß╗üu h├ánh Hß║úi quan sß╗æ
++          </p>
++        </div>
++      </aside>
++
++      {/* Main Content Area */}
++      <div className="flex-1 flex flex-col min-w-0">
++        {/* Mobile Header Navigation Bar */}
++        <header className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sticky top-0 z-20">
++          <div className="flex items-center justify-between mb-2">
++            <div className="flex items-center gap-2">
++              <div className="size-7 rounded-lg bg-blue-700 dark:bg-blue-600 text-white flex items-center justify-center">
++                <ShieldCheck className="size-4" />
++              </div>
++              <span className="font-bold text-xs">VNACCS Intel</span>
++            </div>
++            <span className="text-[10px] text-slate-500">Hß║úi quan VN</span>
++          </div>
++          <nav className="flex items-center gap-1 overflow-x-auto pb-1" aria-label="Mobile Navigation">
++            {navItems.map((item) => {
++              const Icon = item.icon;
++              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
++              return (
++                <Link
++                  key={item.href}
++                  href={item.href}
++                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] whitespace-nowrap font-medium transition-all ${
++                    isActive
++                      ? "bg-blue-600 text-white font-semibold"
++                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
++                  }`}
++                >
++                  <Icon className="size-3.5" />
++                  <span>{item.name}</span>
++                </Link>
++              );
++            })}
++          </nav>
++        </header>
++
++        {/* Dynamic Route Content */}
++        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto max-w-[1600px] w-full mx-auto">
++          {children}
++        </main>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/app/dashboard/officer-performance/page.tsx b/src/app/dashboard/officer-performance/page.tsx
+new file mode 100644
+index 0000000..9d377ae
+--- /dev/null
++++ b/src/app/dashboard/officer-performance/page.tsx
+@@ -0,0 +1,14 @@
++import React from "react";
++
++export default function OfficerPerformancePage() {
++  return (
++    <div className="space-y-4">
++      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
++        Hiß╗çu suß║Ñt c├ín bß╗Ö (Officer Performance)
++      </h1>
++      <p className="text-sm text-slate-500 dark:text-slate-400">
++        Chß╗ë sß╗æ ─æ├ính gi├í n─âng suß║Ñt xß╗¡ l├╜ hß╗ô s╞í, tß╗╖ lß╗ç ph├ón luß╗ông v├á thß╗¥i gian th├┤ng quan theo c├┤ng chß╗⌐c.
++      </p>
++    </div>
++  );
++}
+diff --git a/src/app/dashboard/overview/page.tsx b/src/app/dashboard/overview/page.tsx
+new file mode 100644
+index 0000000..b3e79cf
+--- /dev/null
++++ b/src/app/dashboard/overview/page.tsx
+@@ -0,0 +1,14 @@
++import React from "react";
++
++export default function OverviewPage() {
++  return (
++    <div className="space-y-4">
++      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
++        Tß╗òng quan (Overview)
++      </h1>
++      <p className="text-sm text-slate-500 dark:text-slate-400">
++        Theo d├╡i tß╗òng hß╗úp sß╗æ thu, kim ngß║ích xuß║Ñt nhß║¡p khß║⌐u, tß╗¥ khai v├á ph├ón luß╗ông th├┤ng quan.
++      </p>
++    </div>
++  );
++}
+diff --git a/src/app/dashboard/revenue/page.tsx b/src/app/dashboard/revenue/page.tsx
+new file mode 100644
+index 0000000..49ae08c
+--- /dev/null
++++ b/src/app/dashboard/revenue/page.tsx
+@@ -0,0 +1,14 @@
++import React from "react";
++
++export default function RevenuePage() {
++  return (
++    <div className="space-y-4">
++      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
++        Thu ng├ón s├ích (Revenue)
++      </h1>
++      <p className="text-sm text-slate-500 dark:text-slate-400">
++        Chi tiß║┐t sß╗æ thu thuß║┐ XNK, ph├¡ c╞í sß╗ƒ hß║í tß║ºng cß║úng biß╗ân v├á tiß║┐n ─æß╗Ö thß╗▒c hiß╗çn chß╗ë ti├¬u.
++      </p>
++    </div>
++  );
++}
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 6bc6d9e..fe5bb61 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -1,2072 +1,5 @@
+-"use client";
++import { redirect } from "next/navigation";
+ 
+-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+-import {
+-  Card,
+-  CardContent,
+-  CardDescription,
+-  CardHeader,
+-  CardTitle,
+-} from "@/components/ui/card";
+-import { Button } from "@/components/ui/button";
+-import {
+-  Area,
+-  BarChart,
+-  Bar,
+-  PieChart,
+-  Pie,
+-  Cell,
+-  XAxis,
+-  YAxis,
+-  CartesianGrid,
+-  Tooltip,
+-  Legend,
+-  ResponsiveContainer,
+-  ComposedChart,
+-  Line,
+-} from "recharts";
+-import {
+-  TrendingUp,
+-  FileText,
+-  DollarSign,
+-  Briefcase,
+-  Boxes,
+-  Truck,
+-  Printer,
+-  Calendar,
+-  AlertTriangle,
+-  RefreshCw,
+-  Award,
+-  Globe2,
+-  Moon,
+-  Sun,
+-  Search,
+-  Copy,
+-  Check,
+-  ShieldCheck,
+-  BarChart3,
+-  BrainCircuit,
+-  ArrowUpDown,
+-  Info,
+-  X,
+-  Download,
+-  Command,
+-  ChevronDown,
+-  Building2,
+-} from "lucide-react";
+-
+-// Helper for inline bold parsing
+-function renderInline(text: string) {
+-  const parts = text.split("**");
+-  return parts.map((part, pIdx) =>
+-    pIdx % 2 === 1 ? (
+-      <strong key={pIdx} className="font-semibold text-slate-900 dark:text-slate-100">
+-        {part}
+-      </strong>
+-    ) : (
+-      part
+-    )
+-  );
+-}
+-
+-// Helper for custom markdown rendering in Executive Briefing
+-function renderMarkdown(text: string) {
+-  if (!text) return null;
+-  return text.split("\n").map((line, idx) => {
+-    const trimmed = line.trim();
+-    if (trimmed.startsWith("### ")) {
+-      return (
+-        <h3
+-          key={idx}
+-          className="text-sm md:text-base font-bold mt-4 mb-2 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1.5 flex items-center gap-2"
+-        >
+-          <BarChart3 className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+-          {trimmed.replace("### ", "")}
+-        </h3>
+-      );
+-    }
+-    if (trimmed.startsWith("#### ")) {
+-      return (
+-        <h4
+-          key={idx}
+-          className="text-xs md:text-sm font-bold mt-3.5 mb-1.5 text-slate-900 dark:text-slate-100 flex items-center gap-1.5"
+-        >
+-          {trimmed.replace("#### ", "")}
+-        </h4>
+-      );
+-    }
+-    const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+-    if (numMatch) {
+-      return (
+-        <li key={idx} className="ml-5 list-decimal mb-1.5 text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
+-          {renderInline(numMatch[2])}
+-        </li>
+-      );
+-    }
+-    if (trimmed.startsWith("- ")) {
+-      return (
+-        <li key={idx} className="ml-5 list-disc mb-1 text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
+-          {renderInline(trimmed.replace("- ", ""))}
+-        </li>
+-      );
+-    }
+-    if (trimmed.startsWith("* ")) {
+-      return (
+-        <li key={idx} className="ml-5 list-disc mb-1 italic text-slate-600 dark:text-slate-400 text-xs">
+-          {trimmed.replace("* ", "")}
+-        </li>
+-      );
+-    }
+-    if (trimmed.startsWith("**") && trimmed.endsWith("**")) {
+-      return (
+-        <p key={idx} className="font-bold my-1 text-slate-800 dark:text-slate-200 text-xs">
+-          {trimmed.replace(/\*\*/g, "")}
+-        </p>
+-      );
+-    }
+-    if (trimmed === "---") {
+-      return <hr key={idx} className="my-2.5 border-slate-200 dark:border-slate-800" />;
+-    }
+-    if (trimmed) {
+-      return (
+-        <p key={idx} className="my-1.5 text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+-          {renderInline(trimmed)}
+-        </p>
+-      );
+-    }
+-    return <div key={idx} className="h-1" />;
+-  });
+-}
+-
+-// Resilient currency & number formatters (handles null, undefined, NaN, Infinity)
+-const formatUSD = (val?: number | null) => {
+-  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return "$0";
+-  if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
+-  if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
+-  return `$${Math.round(val).toLocaleString("en-US")}`;
+-};
+-
+-const formatVND = (val?: number | null) => {
+-  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return "0 VND";
+-  if (val >= 1e12) return `${(val / 1e12).toFixed(2)}T VND`;
+-  if (val >= 1e9) return `${(val / 1e9).toFixed(1)} Tß╗╖ VND`;
+-  if (val >= 1e6) return `${(val / 1e6).toFixed(0)} Tr VND`;
+-  return `${Math.round(val).toLocaleString("vi-VN")} VND`;
+-};
+-
+-const formatNumber = (val?: number | null) => {
+-  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return "0";
+-  return Math.round(val).toLocaleString("vi-VN");
+-};
+-
+-// Helper to determine the handling Customs Branch (Chi cß╗Ñc Hß║úi quan quß║ún l├╜)
+-function getCustomsBranch(name: string): string {
+-  const n = (name || "").toLowerCase();
+-  if (n.includes("samsung") || n.includes("─æiß╗çn tß╗¡") || n.includes("foxconn")) {
+-    return "Chi cß╗Ñc HQ Quß║ún l├╜ H├áng ─Éß║ºu t╞░ Gia c├┤ng (Bß║»c Ninh / Th├íi Nguy├¬n)";
+-  }
+-  if (n.includes("├┤ t├┤") || n.includes("toyota") || n.includes("honda") || n.includes("hyundai")) {
+-    return "Chi cß╗Ñc HQ V─⌐nh Ph├║c / Hß║úi Ph├▓ng KV1";
+-  }
+-  if (n.includes("dß║ºu") || n.includes("petro") || n.includes("h├│a chß║Ñt")) {
+-    return "Chi cß╗Ñc HQ Cß╗¡a khß║⌐u Cß║úng S├ái G├▓n KV1 / B├á Rß╗ïa - V┼⌐ng T├áu";
+-  }
+-  if (n.includes("th├⌐p") || n.includes("kim loß║íi") || n.includes("h├▓a ph├ít")) {
+-    return "Chi cß╗Ñc HQ Cß╗¡a khß║⌐u Cß║úng ─É├á Nß║╡ng / Dung Quß║Ñt";
+-  }
+-  if (n.includes("dß╗çt") || n.includes("may") || n.includes("gi├áy")) {
+-    return "Chi cß╗Ñc HQ KCN B├¼nh D╞░╞íng / ─Éß╗ông Nai";
+-  }
+-  return "Chi cß╗Ñc HQ Cß╗¡a khß║⌐u Cß║úng Hß║úi Ph├▓ng KV3";
+-}
+-
+-// Deterministic 6-month trajectory sparkline calculator for an enterprise
+-interface SparkPoint {
+-  month: string;
+-  val: number;
+-  x: number;
+-  y: number;
+-}
+-
+-function computeEnterpriseSparkline(ent: any, width: number = 240, height: number = 44) {
+-  const base = (Number(ent.valueUSD) || 1000000) / 6;
+-  const hash = (ent.taxId || "0")
+-    .split("")
+-    .reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+-  const multipliers = [
+-    0.88 + ((hash * 7) % 15) / 100, // T1
+-    0.78 + ((hash * 11) % 12) / 100, // T2 (Tß║┐t)
+-    0.96 + ((hash * 13) % 18) / 100, // T3
+-    1.06 + ((hash * 17) % 16) / 100, // T4
+-    1.12 + ((hash * 19) % 20) / 100, // T5
+-    1.19 + ((hash * 23) % 22) / 100, // T6
+-  ];
+-  const months = ["T1", "T2", "T3", "T4", "T5", "T6"];
+-  const rawData = multipliers.map((m, idx) => ({
+-    month: months[idx],
+-    val: Math.round(base * m),
+-  }));
+-
+-  const vals = rawData.map((d) => d.val);
+-  const min = Math.min(...vals);
+-  const max = Math.max(...vals);
+-  const range = max - min || 1;
+-  const padX = 8;
+-  const padY = 6;
+-  const usableW = width - padX * 2;
+-  const usableH = height - padY * 2;
+-
+-  const points: SparkPoint[] = rawData.map((d, i) => ({
+-    ...d,
+-    x: padX + (i / (rawData.length - 1)) * usableW,
+-    y: height - padY - ((d.val - min) / range) * usableH,
+-  }));
+-
+-  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+-  const areaD = `${pathD} L ${points[points.length - 1].x.toFixed(1)},${height} L ${points[0].x.toFixed(1)},${height} Z`;
+-
+-  const growthPct = (((vals[5] - vals[0]) / (vals[0] || 1)) * 100).toFixed(1);
+-
+-  return { points, pathD, areaD, growthPct, rawData };
+-}
+-
+-export default function CustomsDashboard() {
+-  const [stats, setStats] = useState<any>(null);
+-  const [loading, setLoading] = useState(true);
+-  const [fetchError, setFetchError] = useState<string | null>(null);
+-  const [loaiXNK, setLoaiXNK] = useState("ALL");
+-  const [datePreset, setDatePreset] = useState("first-half-2026");
+-  const [dbStatus, setDbStatus] = useState<"live" | "fallback">("fallback");
+-  const [activeSection, setActiveSection] = useState("overview");
+-
+-  // AI State
+-  const [aiInsight, setAiInsight] = useState<string>("");
+-  const [aiLoading, setAiLoading] = useState(false);
+-  const [copied, setCopied] = useState(false);
+-  const [copiedTaxId, setCopiedTaxId] = useState<string | null>(null);
+-  const [expandedEnterpriseId, setExpandedEnterpriseId] = useState<string | null>(null);
+-  const [copiedDossierId, setCopiedDossierId] = useState<string | null>(null);
+-
+-  // Search & Table Sorting State
+-  const [searchQuery, setSearchQuery] = useState("");
+-  const [sortField, setSortField] = useState<"valueUSD" | "declarations" | "containers">("valueUSD");
+-  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+-  const searchInputRef = useRef<HTMLInputElement>(null);
+-
+-  // Theme state & client mount flag
+-  const [isDark, setIsDark] = useState(false);
+-  const [mounted, setMounted] = useState(false);
+-  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+-  const [csvExported, setCsvExported] = useState(false);
+-
+-  const reportRef = useRef<HTMLDivElement>(null);
+-  const statsAbortRef = useRef<AbortController | null>(null);
+-  const aiAbortRef = useRef<AbortController | null>(null);
+-
+-  // Cleanup abort controllers on unmount
+-  useEffect(() => {
+-    return () => {
+-      statsAbortRef.current?.abort();
+-      aiAbortRef.current?.abort();
+-    };
+-  }, []);
+-
+-  // Smooth scroll handler for navigation
+-  const scrollToSection = (sectionId: string) => {
+-    setActiveSection(sectionId);
+-    const element = document.getElementById(sectionId);
+-    if (element) {
+-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+-    }
+-  };
+-
+-  // Scroll-spy: Track active section on natural viewport scroll
+-  useEffect(() => {
+-    const sectionIds = ["overview", "trends-tax", "commodities-channels", "ai-briefing", "enterprises"];
+-    const observer = new IntersectionObserver(
+-      (entries) => {
+-        entries.forEach((entry) => {
+-          if (entry.isIntersecting) {
+-            setActiveSection(entry.target.id);
+-          }
+-        });
+-      },
+-      { rootMargin: "-15% 0px -60% 0px", threshold: 0.1 }
+-    );
+-
+-    sectionIds.forEach((id) => {
+-      const el = document.getElementById(id);
+-      if (el) observer.observe(el);
+-    });
+-
+-    return () => observer.disconnect();
+-  }, []);
+-
+-  // Theme toggle with stable functional updater
+-  const toggleTheme = useCallback(() => {
+-    setIsDark((prev) => {
+-      const next = !prev;
+-      if (next) {
+-        document.documentElement.classList.add("dark");
+-        localStorage.setItem("theme", "dark");
+-      } else {
+-        document.documentElement.classList.remove("dark");
+-        localStorage.setItem("theme", "light");
+-      }
+-      return next;
+-    });
+-  }, []);
+-
+-  // Preset Date Ranges
+-  const getDateRange = (preset: string) => {
+-    switch (preset) {
+-      case "first-half-2026":
+-        return { start: "2026-01-01", end: "2026-06-30" };
+-      case "q1-2026":
+-        return { start: "2026-01-01", end: "2026-03-31" };
+-      case "q2-2026":
+-        return { start: "2026-04-01", end: "2026-06-30" };
+-      default:
+-        return { start: "2026-01-01", end: "2026-06-30" };
+-    }
+-  };
+-
+-  const { start: startDate, end: endDate } = getDateRange(datePreset);
+-
+-  // Run AI analysis - Abortable, race-condition protected
+-  const runAiAnalysis = useCallback(async (currentStats?: any) => {
+-    const target = currentStats || stats;
+-    if (!target) return;
+-
+-    aiAbortRef.current?.abort();
+-    const controller = new AbortController();
+-    aiAbortRef.current = controller;
+-
+-    setAiLoading(true);
+-    try {
+-      const res = await fetch("/api/ai-insight", {
+-        method: "POST",
+-        headers: { "Content-Type": "application/json" },
+-        body: JSON.stringify(target),
+-        signal: controller.signal,
+-      });
+-      if (!res.ok) {
+-        throw new Error(`Phß║ún hß╗ôi lß╗ùi ${res.status}`);
+-      }
+-      const data = await res.json();
+-      setAiInsight(data.insight || "");
+-    } catch (error: any) {
+-      if (error.name === "AbortError") return;
+-      console.error("AI Analysis failed:", error);
+-      setAiInsight(
+-        "### Kh├┤ng thß╗â ho├án tß║Ñt ph├ón t├¡ch nhß║¡n ─æß╗ïnh AI\n" +
+-        `- **Th├┤ng tin lß╗ùi:** ${error.message || "Gi├ín ─æoß║ín mß║íng hoß║╖c dß╗ïch vß╗Ñ bß║¡n."}\n` +
+-        "- **Xß╗¡ l├╜:** Vui l├▓ng kiß╗âm tra file cß║Ñu h├¼nh `.env.local` hoß║╖c nhß║Ñp n├║t **'Ph├ón t├¡ch AI'** tr├¬n thanh c├┤ng cß╗Ñ ─æß╗â thß╗¡ lß║íi."
+-      );
+-    } finally {
+-      setAiLoading(false);
+-    }
+-  }, [stats]);
+-
+-  // Data fetching - Abortable, race-condition protected, error surfaced
+-  const fetchStats = useCallback(async () => {
+-    statsAbortRef.current?.abort();
+-    const controller = new AbortController();
+-    statsAbortRef.current = controller;
+-
+-    setLoading(true);
+-    setFetchError(null);
+-    try {
+-      const res = await fetch(
+-        `/api/stats?startDate=${startDate}&endDate=${endDate}&loaiXNK=${loaiXNK}`,
+-        { signal: controller.signal }
+-      );
+-      if (!res.ok) {
+-        throw new Error(`M├íy chß╗º b├ío lß╗ùi ${res.status}: ${res.statusText}`);
+-      }
+-      const data = await res.json();
+-      setStats(data);
+-      setDbStatus(data.isMock ? "fallback" : "live");
+-      runAiAnalysis(data);
+-    } catch (error: any) {
+-      if (error.name === "AbortError") return;
+-      console.error("Failed to fetch dashboard data:", error);
+-      setFetchError(error.message || "Lß╗ùi ─æ╞░ß╗¥ng truyß╗ün kß║┐t nß╗æi");
+-      setDbStatus("fallback");
+-    } finally {
+-      setLoading(false);
+-    }
+-  }, [startDate, endDate, loaiXNK, runAiAnalysis]);
+-
+-  useEffect(() => {
+-    fetchStats();
+-  }, [fetchStats]);
+-
+-  // Export A4 PDF via Native Print
+-  const handleExportPDF = () => {
+-    window.print();
+-  };
+-
+-  // Copy AI report
+-  const handleCopyInsight = () => {
+-    if (!aiInsight) return;
+-    navigator.clipboard.writeText(aiInsight);
+-    setCopied(true);
+-    setTimeout(() => setCopied(false), 2000);
+-  };
+-
+-  // Copy Tax ID to clipboard with micro-feedback
+-  const handleCopyTaxId = (taxId: string) => {
+-    if (!taxId) return;
+-    navigator.clipboard.writeText(taxId);
+-    setCopiedTaxId(taxId);
+-    setTimeout(() => setCopiedTaxId(null), 1800);
+-  };
+-
+-  // Initialize theme from storage or system preference and mark client mounted
+-  useEffect(() => {
+-    setMounted(true);
+-    const savedTheme = localStorage.getItem("theme");
+-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+-      setIsDark(true);
+-      document.documentElement.classList.add("dark");
+-    } else {
+-      setIsDark(false);
+-      document.documentElement.classList.remove("dark");
+-    }
+-  }, []);
+-
+-
+-  // Power-User Keyboard shortcuts: '/', 'Esc', 'D', 'P', 'R', '1', '2', '3', '?'
+-  useEffect(() => {
+-    const handleKeyDown = (e: KeyboardEvent) => {
+-      const isInput = ["INPUT", "SELECT", "TEXTAREA"].includes(
+-        (document.activeElement?.tagName || "").toUpperCase()
+-      );
+-
+-      if (e.key === "/" && !isInput) {
+-        e.preventDefault();
+-        searchInputRef.current?.focus();
+-      } else if (e.key === "Escape") {
+-        if (showShortcutsModal) {
+-          setShowShortcutsModal(false);
+-        } else if (document.activeElement === searchInputRef.current) {
+-          setSearchQuery("");
+-          searchInputRef.current?.blur();
+-        }
+-      } else if (!isInput && e.key === "?") {
+-        e.preventDefault();
+-        setShowShortcutsModal((prev) => !prev);
+-      } else if (!isInput && (e.key === "d" || e.key === "D")) {
+-        toggleTheme();
+-      } else if (!isInput && (e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey) {
+-        handleExportPDF();
+-      } else if (!isInput && (e.key === "r" || e.key === "R") && !aiLoading) {
+-        runAiAnalysis();
+-      } else if (!isInput && e.key === "1") {
+-        setDatePreset("first-half-2026");
+-      } else if (!isInput && e.key === "2") {
+-        setDatePreset("q1-2026");
+-      } else if (!isInput && e.key === "3") {
+-        setDatePreset("q2-2026");
+-      }
+-    };
+-    window.addEventListener("keydown", handleKeyDown);
+-    return () => window.removeEventListener("keydown", handleKeyDown);
+-  }, [toggleTheme, showShortcutsModal, aiLoading, runAiAnalysis]);
+-
+-  // Tax Breakdown Data: Unambiguous domain taxonomy with dedicated fiscal palette
+-  const taxPieData = useMemo(() => {
+-    if (!stats || !stats.taxBreakdown) return [];
+-    const tb = stats.taxBreakdown;
+-    return [
+-      { name: "Thuß║┐ Gi├í trß╗ï gia t─âng (VAT)", value: tb.thueV, color: "#2563EB" },
+-      { name: "Thuß║┐ Xuß║Ñt Nhß║¡p Khß║⌐u", value: tb.thueXNK, color: "#0284C7" },
+-      { name: "Thuß║┐ Ti├¬u thß╗Ñ ─æß║╖c biß╗çt (TT─ÉB)", value: tb.thueT, color: "#7C3AED" },
+-      { name: "Thuß║┐ Bß║úo vß╗ç m├┤i tr╞░ß╗¥ng (BVMT)", value: tb.thueM, color: "#0D9488" },
+-      { name: "Thuß║┐ Tß╗▒ vß╗ç & Chß╗æng b├ín ph├í gi├í", value: tb.thueCBPG, color: "#4F46E5" },
+-      { name: "C├íc khoß║ún sß║»c thuß║┐ kh├íc", value: tb.thueKhac, color: "#64748B" },
+-    ];
+-  }, [stats]);
+-
+-  // Channels with exclusive semantic colors
+-  const channelData = useMemo(() => {
+-    if (!stats || !stats.channels) return [];
+-    return stats.channels.map((ch: any) => {
+-      let color = "#10B981"; // Luß╗ông Xanh
+-      if (ch.name.includes("V├áng")) color = "#F59E0B"; // Luß╗ông V├áng
+-      if (ch.name.includes("─Éß╗Å")) color = "#EF4444"; // Luß╗ông ─Éß╗Å
+-      return { ...ch, color };
+-    });
+-  }, [stats]);
+-
+-  // Sorting handler for enterprise table
+-  const handleSort = (field: "valueUSD" | "declarations" | "containers") => {
+-    if (sortField === field) {
+-      setSortOrder(sortOrder === "desc" ? "asc" : "desc");
+-    } else {
+-      setSortField(field);
+-      setSortOrder("desc");
+-    }
+-  };
+-
+-  // Filtered & Sorted Enterprises (Hoisted query & optimized sort)
+-  const filteredEnterprises = useMemo(() => {
+-    const listSource = stats?.enterprises || stats?.topEnterprises || [];
+-    if (!listSource || listSource.length === 0) return [];
+-    const q = searchQuery.toLowerCase().trim();
+-    const list = q
+-      ? listSource.filter(
+-          (ent: any) =>
+-            (ent.name && ent.name.toLowerCase().includes(q)) ||
+-            (ent.taxId && ent.taxId.includes(q))
+-        )
+-      : [...listSource];
+-
+-    return list.sort((a: any, b: any) => {
+-      const factor = sortOrder === "desc" ? -1 : 1;
+-      const valA = Number(a[sortField]) || 0;
+-      const valB = Number(b[sortField]) || 0;
+-      return (valA - valB) * factor;
+-    });
+-  }, [stats, searchQuery, sortField, sortOrder]);
+-
+-  // Export Enterprises table to UTF-8 CSV (Excel-ready with BOM and leading-zero preservation)
+-  const handleExportCSV = useCallback(() => {
+-    const data = filteredEnterprises;
+-    if (!data || data.length === 0) return;
+-    const header = ["Thß╗⌐ hß║íng", "M├ú sß╗æ thuß║┐", "T├¬n Doanh nghiß╗çp", "Kim ngß║ích (USD)", "Sß╗æ Tß╗¥ khai", "Container (TEU)"];
+-    const rows = data.map((ent: any, idx: number) => [
+-      idx + 1,
+-      `="${ent.taxId}"`,
+-      `"${(ent.name || "").replace(/"/g, '""')}"`,
+-      ent.valueUSD || 0,
+-      ent.declarations || 0,
+-      ent.containers || 0,
+-    ]);
+-
+-    const csvContent = "\uFEFF" + [header.join(","), ...rows.map((r: (string | number)[]) => r.join(","))].join("\r\n");
+-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+-    const url = URL.createObjectURL(blob);
+-    const link = document.createElement("a");
+-    link.setAttribute("href", url);
+-    link.setAttribute("download", `Top_Doanh_Nghiep_XNK_${datePreset}_${loaiXNK}.csv`);
+-    document.body.appendChild(link);
+-    link.click();
+-    document.body.removeChild(link);
+-    URL.revokeObjectURL(url);
+-    setCsvExported(true);
+-    setTimeout(() => setCsvExported(false), 2000);
+-  }, [filteredEnterprises, datePreset, loaiXNK]);
+-
+-  // Toggle in-situ Enterprise Dossier expansion with View Transition API fallback
+-  const toggleExpandEnterprise = useCallback((taxId: string) => {
+-    const nextId = expandedEnterpriseId === taxId ? null : taxId;
+-    if (typeof document !== "undefined" && "startViewTransition" in document) {
+-      (document as any).startViewTransition(() => {
+-        setExpandedEnterpriseId(nextId);
+-      });
+-    } else {
+-      setExpandedEnterpriseId(nextId);
+-    }
+-  }, [expandedEnterpriseId]);
+-
+-  // Copy Executive Enterprise Dossier summary to clipboard
+-  const handleCopyDossier = useCallback((ent: any, rank: number) => {
+-    const complianceText = rank <= 3
+-      ? "Doanh nghiß╗çp ╞»u ti├¬n (AEO)"
+-      : rank <= 10
+-      ? "Hß║íng 1: Tu├ón thß╗º Cao (Th├┤ng t╞░ 81/2019/TT-BTC)"
+-      : "Hß║íng 2: Tu├ón thß╗º Chuß║⌐n";
+-
+-    const summary = [
+-      `TR├ìCH Lß╗ñC Hß╗Æ S╞á DOANH NGHIß╗åP XNK - Hß╗å THß╗ÉNG VNACCS/VCIS`,
+-      `==================================================`,
+-      `Thß╗⌐ hß║íng: #${rank}`,
+-      `T├¬n doanh nghiß╗çp: ${ent.name}`,
+-      `M├ú sß╗æ thuß║┐: ${ent.taxId}`,
+-      `Kim ngß║ích kß╗│ n├áy: $${(ent.valueUSD || 0).toLocaleString("en-US")} USD (~${((ent.valueUSD || 0) * 25000).toLocaleString("vi-VN")} VND)`,
+-      `Sß╗æ l╞░ß╗úng tß╗¥ khai: ${(ent.declarations || 0).toLocaleString("vi-VN")} tß╗¥ khai`,
+-      `Sß║ún l╞░ß╗úng container: ${(ent.containers || 0).toLocaleString("vi-VN")} TEU`,
+-      `Trß╗ï gi├í trung b├¼nh: $${Math.round((ent.valueUSD || 0) / (ent.declarations || 1)).toLocaleString("en-US")} USD/tß╗¥ khai`,
+-      `C╞í quan Hß║úi quan quß║ún l├╜: ${getCustomsBranch(ent.name)}`,
+-      `Ph├ón hß║íng tu├ón thß╗º: ${complianceText}`,
+-      `Thß╗¥i gian th├┤ng quan trung b├¼nh: ~1.5 gi├óy (Tß╗▒ ─æß╗Öng h├│a luß╗ông xanh)`,
+-      `Tr├¡ch xuß║Ñt ng├áy: ${new Date().toLocaleDateString("vi-VN")} ${new Date().toLocaleTimeString("vi-VN")}`,
+-      `Nguß╗ôn: CSDL VNACCS_REPORT - Tß╗òng cß╗Ñc Hß║úi quan`,
+-    ].join("\n");
+-
+-    navigator.clipboard.writeText(summary);
+-    setCopiedDossierId(ent.taxId);
+-    setTimeout(() => setCopiedDossierId(null), 2000);
+-  }, []);
+-
+-  const navItems = [
+-    { id: "overview", label: "Tß╗òng quan chß╗ë sß╗æ", icon: TrendingUp },
+-    { id: "trends-tax", label: "Xu h╞░ß╗¢ng & Thuß║┐ thu", icon: Award },
+-    { id: "commodities-channels", label: "H├áng h├│a & Ph├ón luß╗ông", icon: Boxes },
+-    { id: "ai-briefing", label: "Bß║ún tin Nhß║¡n ─æß╗ïnh AI", icon: BrainCircuit },
+-    { id: "enterprises", label: "Doanh nghiß╗çp XNK", icon: Briefcase },
+-  ];
+-
+-  return (
+-    <div className="flex min-h-screen bg-slate-100/70 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased">
+-      
+-      {/* Top subtle indeterminate progress bar during fetch */}
+-      {loading && (
+-        <div className="fixed top-0 left-0 right-0 h-1 bg-blue-100 dark:bg-blue-950/80 overflow-hidden z-50">
+-          <div className="h-full bg-blue-600 dark:bg-blue-400 w-1/3 animate-[indeterminate_1.5s_infinite_linear]" />
+-        </div>
+-      )}
+-
+-      {/* Sidebar Navigation - Fixed & Smooth Scrollable */}
+-      <aside className="w-64 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/95 p-5 flex flex-col justify-between shrink-0 hidden lg:flex print:hidden shadow-xs sticky top-0 h-screen">
+-        <div className="space-y-6">
+-          {/* Logo & Operational Title */}
+-          <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+-            <div className="size-9 rounded-xl bg-blue-700 dark:bg-blue-600 text-white flex items-center justify-center shadow-xs">
+-              <ShieldCheck className="size-5" />
+-            </div>
+-            <div>
+-              <h1 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-white">
+-                VNACCS Intel
+-              </h1>
+-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block leading-tight">
+-                Tß╗òng cß╗Ñc Hß║úi quan Viß╗çt Nam
+-              </span>
+-            </div>
+-          </div>
+-
+-          {/* Navigation Items with Active Tracking */}
+-          <div className="space-y-1">
+-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 block mb-2">
+-              Ph├ón hß╗ç Ph├ón t├¡ch
+-            </span>
+-            {navItems.map((item) => {
+-              const Icon = item.icon;
+-              const isActive = activeSection === item.id;
+-              return (
+-                <Button
+-                  key={item.id}
+-                  variant={isActive ? "default" : "ghost"}
+-                  size="sm"
+-                  onClick={() => scrollToSection(item.id)}
+-                  className={`w-full justify-start gap-2.5 font-medium text-xs transition-all ${
+-                    isActive
+-                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-xs font-semibold"
+-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+-                  }`}
+-                >
+-                  <Icon className="size-4" />
+-                  {item.label}
+-                </Button>
+-              );
+-            })}
+-          </div>
+-
+-          {/* Database Connection Status - Distilled & compact */}
+-          <div className="pt-2">
+-            <div
+-              className="px-3 py-2 rounded-xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs"
+-              title={
+-                dbStatus === "live"
+-                  ? "Truy vß║Ñn trß╗▒c tiß║┐p CSDL VNACCS_REPORT (bß║úng rpToKhai & rpHang)"
+-                  : "Ch╞░a kß║┐t nß╗æi SQL Server. ─Éang hiß╗ân thß╗ï dß╗» liß╗çu mß║½u nghiß╗çp vß╗Ñ Hß║úi quan VN"
+-              }
+-            >
+-              <span className="text-slate-500 dark:text-slate-400 font-medium text-[11px]">Dß╗» liß╗çu:</span>
+-              <span className="font-semibold text-xs flex items-center gap-1.5">
+-                <span
+-                  className={`size-2 rounded-full ${
+-                    dbStatus === "live"
+-                      ? "bg-emerald-500 animate-pulse ring-3 ring-emerald-500/20"
+-                      : "bg-amber-500 animate-pulse ring-3 ring-amber-500/20"
+-                  }`}
+-                />
+-                {dbStatus === "live" ? "SQL Server Live" : "CSDL M├┤ phß╗Ång"}
+-              </span>
+-            </div>
+-          </div>
+-        </div>
+-
+-        {/* Sidebar Footer - Professional Government Systems & Shortcuts HUD */}
+-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+-          <div className="flex items-center justify-between text-xs">
+-            <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">VNACCS/VCIS</span>
+-            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+-              Tß╗òng cß╗Ñc Hß║úi quan
+-            </span>
+-          </div>
+-          <button
+-            type="button"
+-            onClick={() => setShowShortcutsModal(true)}
+-            className="w-full flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100/60 dark:border-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group cursor-pointer text-left"
+-            title="Nhß║Ñn ─æß╗â xem to├án bß╗Ö ph├¡m tß║»t hoß║╖c bß║Ñm ph├¡m ?"
+-          >
+-            <span className="flex items-center gap-1">
+-              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300 group-hover:border-blue-400 transition-colors">/</kbd> T├¼m
+-            </span>
+-            <span className="flex items-center gap-1">
+-              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300 group-hover:border-blue-400 transition-colors">D</kbd> Theme
+-            </span>
+-            <span className="flex items-center gap-1">
+-              <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[9px] text-slate-700 dark:text-slate-300 group-hover:border-blue-400 transition-colors">?</kbd> Ph├¡m tß║»t
+-            </span>
+-          </button>
+-        </div>
+-      </aside>
+-
+-      {/* Main Content Area */}
+-      <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6 overflow-y-auto max-w-[1600px] mx-auto w-full print:p-0 print:max-w-none">
+-        
+-        {/* Top Header & Filter Controls (Hidden in print) */}
+-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800 print:hidden">
+-          <div>
+-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+-              Thß╗æng k├¬ Hß║úi quan & Th╞░╞íng mß║íi XNK
+-            </h1>
+-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+-              Hß╗ç thß╗æng ─Éiß╗üu h├ánh & Thß╗æng k├¬ Tß╗¥ khai Hß║úi quan ─æiß╗çn tß╗¡ VNACCS/VCIS
+-            </p>
+-          </div>
+-
+-          {/* Action & Filter Toolbar - Grouped cleanly */}
+-          <div className="flex flex-wrap items-center gap-2.5">
+-            {/* Filter Group: Date + Regime */}
+-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
+-              {/* Date Preset Selector */}
+-              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1 rounded-lg shadow-2xs">
+-                <Calendar className="size-3.5 text-slate-500 shrink-0" />
+-                <select
+-                  aria-label="Chß╗ìn khoß║úng thß╗¥i gian thß╗æng k├¬"
+-                  value={datePreset}
+-                  onChange={(e) => setDatePreset(e.target.value)}
+-                  className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 border-0 focus:ring-0 outline-none cursor-pointer pr-4"
+-                >
+-                  <option value="first-half-2026">6 Th├íng ─æß║ºu n─âm 2026</option>
+-                  <option value="q1-2026">Qu├╜ 1 / 2026</option>
+-                  <option value="q2-2026">Qu├╜ 2 / 2026</option>
+-                </select>
+-              </div>
+-
+-              {/* Regime Type Buttons */}
+-              <div className="flex items-center gap-1">
+-                <Button
+-                  variant={loaiXNK === "ALL" ? "default" : "ghost"}
+-                  size="xs"
+-                  onClick={() => setLoaiXNK("ALL")}
+-                  className={`text-xs px-2.5 py-1 active:scale-95 transition-all duration-150 ${
+-                    loaiXNK === "ALL"
+-                      ? "bg-blue-600 text-white shadow-2xs"
+-                      : "text-slate-600 dark:text-slate-400"
+-                  }`}
+-                >
+-                  To├án bß╗Ö
+-                </Button>
+-                <Button
+-                  variant={loaiXNK === "NK" ? "default" : "ghost"}
+-                  size="xs"
+-                  onClick={() => setLoaiXNK("NK")}
+-                  className={`text-xs px-2.5 py-1 active:scale-95 transition-all duration-150 ${
+-                    loaiXNK === "NK"
+-                      ? "bg-blue-600 text-white shadow-2xs"
+-                      : "text-slate-600 dark:text-slate-400"
+-                  }`}
+-                >
+-                  Nhß║¡p khß║⌐u (NK)
+-                </Button>
+-                <Button
+-                  variant={loaiXNK === "XK" ? "default" : "ghost"}
+-                  size="xs"
+-                  onClick={() => setLoaiXNK("XK")}
+-                  className={`text-xs px-2.5 py-1 active:scale-95 transition-all duration-150 ${
+-                    loaiXNK === "XK"
+-                      ? "bg-blue-600 text-white shadow-2xs"
+-                      : "text-slate-600 dark:text-slate-400"
+-                  }`}
+-                >
+-                  Xuß║Ñt khß║⌐u (XK)
+-                </Button>
+-              </div>
+-            </div>
+-
+-            {/* Action Group: AI + Print + Theme */}
+-            <div className="flex items-center gap-1.5">
+-              {/* AI Re-Analyze Button */}
+-              <Button
+-                variant="outline"
+-                size="sm"
+-                onClick={() => runAiAnalysis()}
+-                disabled={aiLoading}
+-                className="gap-1.5 text-xs font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-2xs active:scale-95 transition-all duration-150"
+-              >
+-                <BrainCircuit className={`size-3.5 ${aiLoading ? "animate-spin text-blue-600" : "text-blue-600 dark:text-blue-400"}`} />
+-                Ph├ón t├¡ch AI
+-              </Button>
+-
+-              {/* Native Print / PDF Button */}
+-              <Button
+-                onClick={handleExportPDF}
+-                size="sm"
+-                className="gap-1.5 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-2xs active:scale-95 transition-all duration-150"
+-              >
+-                <Printer className="size-3.5" />
+-                In / Xuß║Ñt PDF
+-              </Button>
+-
+-              {/* Dark / Light Mode Switcher */}
+-              <Button
+-                variant="outline"
+-                size="icon-sm"
+-                onClick={toggleTheme}
+-                title={isDark ? "Chuyß╗ân sang chß║┐ ─æß╗Ö S├íng" : "Chuyß╗ân sang chß║┐ ─æß╗Ö Tß╗æi"}
+-                className="border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 active:scale-95 transition-all duration-150"
+-              >
+-                {isDark ? <Sun className="size-4 text-amber-400" /> : <Moon className="size-4 text-slate-700" />}
+-              </Button>
+-            </div>
+-          </div>
+-        </div>
+-
+-        {/* Mobile Quick-Navigation Pills (visible on < lg) */}
+-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 lg:hidden print:hidden">
+-          {navItems.map((item) => {
+-            const Icon = item.icon;
+-            const isActive = activeSection === item.id;
+-            return (
+-              <button
+-                key={item.id}
+-                onClick={() => scrollToSection(item.id)}
+-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap active:scale-95 transition-all duration-150 shrink-0 ${
+-                  isActive
+-                    ? "bg-blue-600 text-white shadow-xs"
+-                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800"
+-                }`}
+-              >
+-                <Icon className="size-3" />
+-                {item.label}
+-              </button>
+-            );
+-          })}
+-        </div>
+-
+-        {/* Smooth wrapper preserving view during background fetch */}
+-        <div
+-          ref={reportRef}
+-          id="report-container"
+-          className={`space-y-6 transition-opacity duration-200 ${
+-            loading && !stats ? "opacity-30" : "opacity-100"
+-          }`}
+-        >
+-          {/* Header visible in PDF / Print Mode */}
+-          <div className="pdf-report-header pb-4 border-b border-slate-300">
+-            <div className="flex justify-between items-center">
+-              <div>
+-                <h1 className="text-2xl font-black text-slate-950 tracking-tight">
+-                  B├üO C├üO THß╗ÉNG K├è HOß║áT ─Éß╗ÿNG Hß║óI QUAN & TH╞»╞áNG Mß║áI XNK
+-                </h1>
+-                <p className="text-xs text-slate-600 mt-1">
+-                  Kß╗│ thß╗æng k├¬: {datePreset === "first-half-2026" ? "6 th├íng ─æß║ºu n─âm 2026" : datePreset === "q1-2026" ? "Qu├╜ 1/2026" : "Qu├╜ 2/2026"} | 
+-                  Loß║íi h├¼nh: {loaiXNK === "ALL" ? "To├án bß╗Ö Xuß║Ñt Nhß║¡p Khß║⌐u" : loaiXNK === "NK" ? "Nhß║¡p khß║⌐u (NK)" : "Xuß║Ñt khß║⌐u (XK)"}
+-                </p>
+-              </div>
+-              <div className="text-right">
+-                <div className="font-bold text-sm text-blue-900">VNACCS/VCIS INTEL</div>
+-                <div className="text-[10px] text-slate-500">Thß╗¥i ─æiß╗âm in: {new Date().toLocaleDateString("vi-VN")}</div>
+-              </div>
+-            </div>
+-          </div>
+-
+-          {/* Connection Error Banner with Retry */}
+-          {fetchError && !stats && (
+-            <div className="p-5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs" role="alert">
+-              <div className="flex items-start gap-3">
+-                <AlertTriangle className="size-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+-                <div>
+-                  <h3 className="text-sm font-bold">Kh├┤ng thß╗â kß║┐t nß╗æi m├íy chß╗º thß╗æng k├¬ Hß║úi quan</h3>
+-                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-0.5">
+-                    {fetchError}. Vui l├▓ng kiß╗âm tra lß║íi kß║┐t nß╗æi mß║íng hoß║╖c thß╗¡ lß║íi.
+-                  </p>
+-                </div>
+-              </div>
+-              <Button
+-                onClick={() => fetchStats()}
+-                size="sm"
+-                className="bg-rose-600 hover:bg-rose-700 text-white shrink-0 self-start sm:self-center gap-1.5 text-xs font-semibold shadow-2xs"
+-              >
+-                <RefreshCw className="size-3.5" />
+-                Thß╗¡ lß║íi kß║┐t nß╗æi
+-              </Button>
+-            </div>
+-          )}
+-
+-          {/* 1. Refined KPI Cards Grid */}
+-          <div id="overview" className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 md:gap-4 scroll-mt-6">
+-            
+-            {/* Total Declarations */}
+-            <Card
+-              title={
+-                stats?.kpis?.totalDeclarations
+-                  ? `Tß╗òng sß╗æ tß╗¥ khai: ${stats.kpis.totalDeclarations.toLocaleString("vi-VN")} tß╗¥ khai\n╞»ß╗¢c t├¡nh tß║ºn suß║Ñt: ~${Math.round(stats.kpis.totalDeclarations / (datePreset === "first-half-2026" ? 180 : 90)).toLocaleString("vi-VN")} tß╗¥ khai/ng├áy`
+-                  : undefined
+-              }
+-              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors flex flex-col justify-between cursor-help"
+-            >
+-              <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
+-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+-                  Tß╗òng sß╗æ tß╗¥ khai
+-                </span>
+-                <div className="size-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
+-                  <FileText className="size-3.5" />
+-                </div>
+-              </CardHeader>
+-              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+-                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+-                  {formatNumber(stats?.kpis?.totalDeclarations || 0)}
+-                </div>
+-                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+-                  <span className="font-medium">Tß╗╖ lß╗ç luß╗ông xanh:</span>
+-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+-                    {stats?.kpis?.totalDeclarations && stats?.channels
+-                      ? `${(
+-                          ((stats.channels.find((c: any) => c.name.includes("Xanh"))?.value || 0) /
+-                            stats.kpis.totalDeclarations) *
+-                          100
+-                        ).toFixed(1)}%`
+-                      : "0%"}
+-                  </span>
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-            {/* Total USD Value */}
+-            <Card
+-              title={
+-                stats?.kpis?.totalValueUSD
+-                  ? `Kim ngß║ích ch├¡nh x├íc: $${stats.kpis.totalValueUSD.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD\nGi├í trß╗ï quy ─æß╗òi: ${((stats.kpis.totalValueUSD * 25000)).toLocaleString("vi-VN")} VND (Tß╗╖ gi├í 25.000)\nTrß╗ï gi├í trung b├¼nh: $${stats.kpis.totalDeclarations ? Math.round(stats.kpis.totalValueUSD / stats.kpis.totalDeclarations).toLocaleString("en-US") : 0} USD/tß╗¥ khai`
+-                  : undefined
+-              }
+-              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-sky-400 dark:hover:border-sky-600 transition-colors flex flex-col justify-between cursor-help"
+-            >
+-              <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
+-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+-                  Kim ngß║ích XNK
+-                </span>
+-                <div className="size-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
+-                  <DollarSign className="size-3.5" />
+-                </div>
+-              </CardHeader>
+-              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+-                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+-                  {formatUSD(stats?.kpis?.totalValueUSD || 0)}
+-                </div>
+-                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+-                  <span className="font-medium">Quy ─æß╗òi:</span>
+-                  <span className="font-semibold text-slate-700 dark:text-slate-300" title="Tß╗╖ gi├í hß║ích to├ín 25.000 VND/USD">
+-                    {stats?.kpis?.totalValueUSD
+-                      ? `${((stats.kpis.totalValueUSD * 25000) / 1e12).toFixed(1)} Tß╗╖ VND`
+-                      : "0 Tß╗╖ VND"}
+-                  </span>
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-            {/* Total Tax Revenue - Disciplined Slate/Indigo */}
+-            <Card
+-              title={
+-                stats?.kpis?.totalTaxVND
+-                  ? `Sß╗æ thu nß╗Öp NSNN ch├¡nh x├íc: ${stats.kpis.totalTaxVND.toLocaleString("vi-VN")} VND\nTß╗╖ lß╗ç ─æß╗Öng vi├¬n ng├ón s├ích: ${stats.kpis.totalValueUSD ? ((stats.kpis.totalTaxVND / (stats.kpis.totalValueUSD * 25000)) * 100).toFixed(3) : 0}% tr├¬n tß╗òng kim ngß║ích quy ─æß╗òi`
+-                  : undefined
+-              }
+-              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors flex flex-col justify-between cursor-help"
+-            >
+-              <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
+-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+-                  Thuß║┐ Hß║úi quan ─æ├ú thu
+-                </span>
+-                <div className="size-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center">
+-                  <Award className="size-3.5" />
+-                </div>
+-              </CardHeader>
+-              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+-                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+-                  {formatVND(stats?.kpis?.totalTaxVND || 0)}
+-                </div>
+-                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+-                  <span className="font-medium">Tß╗╖ lß╗ç thu thuß║┐:</span>
+-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+-                    {stats?.kpis?.totalTaxVND && stats?.kpis?.totalValueUSD
+-                      ? `${((stats.kpis.totalTaxVND / (stats.kpis.totalValueUSD * 25000)) * 100).toFixed(2)}%`
+-                      : "0.00%"}
+-                  </span>
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-            {/* Volume & Weight */}
+-            <Card
+-              title={
+-                stats?.kpis?.totalContainers
+-                  ? `L╞░ß╗úng container: ${stats.kpis.totalContainers.toLocaleString("vi-VN")} TEU\nTrß╗ìng l╞░ß╗úng thß╗▒c tß║┐: ${(stats.kpis.totalWeightTNE || 0).toLocaleString("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} TNE (Tß║Ñn)\nTß║úi trß╗ìng trung b├¼nh: ${((stats.kpis.totalWeightTNE || 0) / stats.kpis.totalContainers).toFixed(2)} TNE/TEU`
+-                  : undefined
+-              }
+-              className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs hover:border-teal-400 dark:hover:border-teal-500 transition-colors flex flex-col justify-between cursor-help"
+-            >
+-              <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
+-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+-                  Vß║¡n chuyß╗ân & Container
+-                </span>
+-                <div className="size-7 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+-                  <Truck className="size-3.5" />
+-                </div>
+-              </CardHeader>
+-              <CardContent className="px-4 pb-3.5 pt-0 flex flex-col justify-between flex-1">
+-                <div className="text-xl sm:text-2xl font-black tracking-tight tabular-nums text-slate-900 dark:text-white">
+-                  {formatNumber(stats?.kpis?.totalContainers || 0)}{" "}
+-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 font-sans">TEU</span>
+-                </div>
+-                <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+-                  <span>Trß╗ìng l╞░ß╗úng:</span>
+-                  <span className="font-bold text-slate-700 dark:text-slate-300">
+-                    {formatNumber(Math.round(stats?.kpis?.totalWeightTNE || 0))} TNE
+-                  </span>
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-          </div>
+-
+-          {/* 2. Charts Section - Row 1: Trend & Tax Distribution */}
+-          <div id="trends-tax" className="grid grid-cols-1 xl:grid-cols-12 gap-5 scroll-mt-6">
+-            
+-            {/* Trend Chart (8 Columns) */}
+-            <Card className="xl:col-span-8 border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs page-break-avoid min-w-0">
+-              <CardHeader className="pb-2 pt-4 px-5">
+-                <div className="flex items-center justify-between">
+-                  <div>
+-                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+-                      <TrendingUp className="size-4 text-blue-600" />
+-                      Xu h╞░ß╗¢ng Kim ngß║ích & Thu ng├ón s├ích
+-                    </CardTitle>
+-                    <CardDescription className="text-xs mt-0.5">
+-                      Chuß╗ùi thß╗¥i gian theo th├íng (Kim ngß║ích USD & Thuß║┐ VND)
+-                    </CardDescription>
+-                  </div>
+-                </div>
+-              </CardHeader>
+-              <CardContent className="h-72 sm:h-80 px-2 pb-3">
+-                {!mounted ? (
+-                  <div className="h-full w-full bg-slate-50/50 dark:bg-slate-800/30 rounded-lg animate-pulse" />
+-                ) : stats?.trends && stats.trends.length > 0 ? (
+-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+-                    <ComposedChart data={stats.trends}>
+-                      <defs>
+-                        <linearGradient id="usdGrad" x1="0" y1="0" x2="0" y2="1">
+-                          <stop offset="5%" stopColor="#2563EB" stopOpacity={0.25} />
+-                          <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
+-                        </linearGradient>
+-                      </defs>
+-                      <CartesianGrid
+-                        strokeDasharray="3 3"
+-                        vertical={false}
+-                        stroke={isDark ? "#1E293B" : "#F1F5F9"}
+-                      />
+-                      <XAxis
+-                        dataKey="date"
+-                        stroke="#94A3B8"
+-                        fontSize={11}
+-                        tickLine={false}
+-                      />
+-                      <YAxis
+-                        yAxisId="left"
+-                        stroke="#2563EB"
+-                        fontSize={10}
+-                        tickLine={false}
+-                        tickFormatter={(v) => `$${(v / 1e6).toFixed(0)}M`}
+-                      />
+-                      <YAxis
+-                        yAxisId="right"
+-                        orientation="right"
+-                        stroke="#4F46E5"
+-                        fontSize={10}
+-                        tickLine={false}
+-                        tickFormatter={(v) => `${(v / 1e9).toFixed(0)} Tß╗╖`}
+-                      />
+-                      <Tooltip
+-                        formatter={(value: any, name: any) => {
+-                          if (name === "Kim ngß║ích (USD)") return [formatUSD(value), name];
+-                          return [formatVND(value), name];
+-                        }}
+-                        contentStyle={{
+-                          borderRadius: "10px",
+-                          backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+-                          border: isDark ? "1px solid #1E293B" : "1px solid #E2E8F0",
+-                          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+-                          fontSize: "12px",
+-                        }}
+-                      />
+-                      <Legend verticalAlign="top" height={34} wrapperStyle={{ fontSize: 11 }} />
+-                      <Area
+-                        yAxisId="left"
+-                        type="monotone"
+-                        dataKey="valueUSD"
+-                        name="Kim ngß║ích (USD)"
+-                        fill="url(#usdGrad)"
+-                        stroke="#2563EB"
+-                        strokeWidth={2.5}
+-                        isAnimationActive={true}
+-                        animationDuration={600}
+-                        animationEasing="ease-out"
+-                      />
+-                      <Line
+-                        yAxisId="right"
+-                        type="monotone"
+-                        dataKey="taxVND"
+-                        name="Thuß║┐ thu ─æ╞░ß╗úc (VND)"
+-                        stroke="#4F46E5"
+-                        strokeWidth={2.5}
+-                        dot={{ r: 3.5, fill: "#4F46E5", strokeWidth: 0 }}
+-                        isAnimationActive={true}
+-                        animationDuration={600}
+-                        animationEasing="ease-out"
+-                      />
+-                    </ComposedChart>
+-                  </ResponsiveContainer>
+-                ) : (
+-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+-                    <TrendingUp className="size-8 mb-2 stroke-1 text-slate-300 dark:text-slate-600" />
+-                    Ch╞░a c├│ sß╗æ liß╗çu chuß╗ùi thß╗¥i gian cho bß╗Ö lß╗ìc ─æ├ú chß╗ìn
+-                  </div>
+-                )}
+-              </CardContent>
+-            </Card>
+-
+-            {/* Tax Allocation Donut (4 Columns) */}
+-            <Card className="xl:col-span-4 border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs flex flex-col justify-between page-break-avoid min-w-0">
+-              <CardHeader className="pb-1 pt-4 px-5">
+-                <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+-                  <Award className="size-4 text-blue-600" />
+-                  C╞í cß║Ñu c├íc khoß║ún thu Thuß║┐ quan
+-                </CardTitle>
+-                <CardDescription className="text-xs mt-0.5">
+-                  Tß╗╖ trß╗ìng ─æ├│ng g├│p theo tß╗½ng sß║»c thuß║┐
+-                </CardDescription>
+-              </CardHeader>
+-              <CardContent className="px-4 pb-4 flex flex-col justify-between flex-1">
+-                <div className="h-52 relative my-1">
+-                  {!mounted ? (
+-                    <div className="h-full w-full flex items-center justify-center">
+-                      <div className="size-36 rounded-full border-4 border-slate-100 dark:border-slate-800 animate-pulse" />
+-                    </div>
+-                  ) : (
+-                    <>
+-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+-                        <PieChart>
+-                          <Pie
+-                            data={taxPieData}
+-                            cx="50%"
+-                            cy="50%"
+-                            innerRadius={58}
+-                            outerRadius={78}
+-                            paddingAngle={3}
+-                            dataKey="value"
+-                            isAnimationActive={true}
+-                            animationDuration={600}
+-                            animationEasing="ease-out"
+-                          >
+-                            {taxPieData.map((entry, index) => (
+-                              <Cell key={`cell-${index}`} fill={entry.color} />
+-                            ))}
+-                          </Pie>
+-                          <Tooltip formatter={(value: any) => formatVND(value)} />
+-                        </PieChart>
+-                      </ResponsiveContainer>
+-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+-                          Tß╗òng sß╗æ thu
+-                        </span>
+-                        <span className="text-sm font-black text-slate-900 dark:text-white block tabular-nums">
+-                          {stats?.kpis?.totalTaxVND ? `${(stats.kpis.totalTaxVND / 1e12).toFixed(2)}T` : "0"}
+-                        </span>
+-                        <span className="text-[9px] text-slate-500 dark:text-slate-400 block">VND</span>
+-                      </div>
+-                    </>
+-                  )}
+-                </div>
+-
+-                {/* 6-Tax Statutory Micro-Grid Legend with Percentage Indicators */}
+-                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+-                  {taxPieData.map((item, idx) => {
+-                    const pct = stats?.kpis?.totalTaxVND
+-                      ? ((item.value / stats.kpis.totalTaxVND) * 100).toFixed(1)
+-                      : "0.0";
+-                    const shortName = item.name
+-                      .replace("Thuß║┐ Gi├í trß╗ï gia t─âng (VAT)", "Thuß║┐ GTGT (VAT)")
+-                      .replace("Thuß║┐ Ti├¬u thß╗Ñ ─æß║╖c biß╗çt (TT─ÉB)", "Thuß║┐ TT─ÉB")
+-                      .replace("Thuß║┐ Bß║úo vß╗ç m├┤i tr╞░ß╗¥ng (BVMT)", "Thuß║┐ BVMT")
+-                      .replace("Thuß║┐ Tß╗▒ vß╗ç & Chß╗æng b├ín ph├í gi├í", "Tß╗▒ vß╗ç & CBPG")
+-                      .replace("C├íc khoß║ún sß║»c thuß║┐ kh├íc", "Thuß║┐ kh├íc");
+-
+-                    return (
+-                      <div key={idx} className="flex items-center justify-between text-xs" title={`${item.name}: ${formatVND(item.value)}`}>
+-                        <div className="flex items-center gap-1.5 truncate max-w-[125px] sm:max-w-[140px]">
+-                          <span
+-                            className="size-2 rounded-xs shrink-0"
+-                            style={{ backgroundColor: item.color }}
+-                          />
+-                          <span className="truncate text-slate-600 dark:text-slate-300 font-medium text-[11px]">
+-                            {shortName}
+-                          </span>
+-                        </div>
+-                        <span className="font-bold tabular-nums text-slate-900 dark:text-white text-[11px] shrink-0 ml-1">
+-                          {pct}%
+-                        </span>
+-                      </div>
+-                    );
+-                  })}
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-          </div>
+-
+-          {/* 3. Charts Section - Row 2: Commodities & Customs Channels */}
+-          <div id="commodities-channels" className="grid grid-cols-1 xl:grid-cols-12 gap-5 scroll-mt-6">
+-            
+-            {/* Top Commodities (7 Columns) - Sky Blue palette avoiding Green clash */}
+-            <Card className="xl:col-span-7 border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs page-break-avoid min-w-0">
+-              <CardHeader className="pb-1 pt-4 px-5">
+-                <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+-                  <Boxes className="size-4 text-sky-600" />
+-                  Nh├│m H├áng h├│a Trß╗ìng ─æiß╗âm
+-                </CardTitle>
+-                <CardDescription className="text-xs mt-0.5">
+-                  Xß║┐p hß║íng theo tß╗òng trß╗ï gi├í quy ─æß╗òi tiß╗ün ─æß╗ông (VND)
+-                </CardDescription>
+-              </CardHeader>
+-              <CardContent className="h-72 sm:h-80 px-2 pb-3">
+-                {!mounted ? (
+-                  <div className="h-full w-full bg-slate-50/50 dark:bg-slate-800/30 rounded-lg animate-pulse" />
+-                ) : stats?.commodities && stats.commodities.length > 0 ? (
+-                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+-                    <BarChart
+-                      data={stats.commodities.slice(0, 6)}
+-                      layout="vertical"
+-                      margin={{ top: 10, right: 25, left: 15, bottom: 5 }}
+-                    >
+-                      <CartesianGrid
+-                        strokeDasharray="3 3"
+-                        horizontal={false}
+-                        stroke={isDark ? "#1E293B" : "#F1F5F9"}
+-                      />
+-                      <XAxis
+-                        type="number"
+-                        stroke="#94A3B8"
+-                        fontSize={9}
+-                        tickFormatter={(v) => `${(v / 1e12).toFixed(1)}T`}
+-                      />
+-                      <YAxis
+-                        dataKey="name"
+-                        type="category"
+-                        stroke="#94A3B8"
+-                        fontSize={10}
+-                        width={130}
+-                        tickFormatter={(v) => (v.length > 22 ? `${v.substring(0, 22)}...` : v)}
+-                      />
+-                      <Tooltip formatter={(value: any) => [formatVND(value), "Trß╗ï gi├í"]} />
+-                      <Bar
+-                        dataKey="valueVND"
+-                        name="Trß╗ï gi├í (VND)"
+-                        fill="#0284C7"
+-                        radius={[0, 5, 5, 0]}
+-                        barSize={16}
+-                        isAnimationActive={true}
+-                        animationDuration={600}
+-                        animationEasing="ease-out"
+-                      />
+-                    </BarChart>
+-                  </ResponsiveContainer>
+-                ) : (
+-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+-                    <Boxes className="size-8 mb-2 stroke-1 text-slate-300 dark:text-slate-600" />
+-                    Ch╞░a c├│ dß╗» liß╗çu h├áng h├│a trß╗ìng ─æiß╗âm cho kß╗│ b├ío c├ío n├áy
+-                  </div>
+-                )}
+-              </CardContent>
+-            </Card>
+-
+-            {/* Customs Clearance Channels (5 Columns) - Green/Yellow/Red strictly preserved */}
+-            <Card className="xl:col-span-5 border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs flex flex-col justify-between page-break-avoid min-w-0">
+-              <CardHeader className="pb-1 pt-4 px-5">
+-                <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+-                  <AlertTriangle className="size-4 text-amber-500" />
+-                  Ph├ón luß╗ông Tß╗¥ khai & Mß╗⌐c ─æß╗Ö Tu├ón thß╗º
+-                </CardTitle>
+-                <CardDescription className="text-xs mt-0.5">
+-                  ─Éo l╞░ß╗¥ng quß║ún l├╜ rß╗ºi ro th├┤ng quan tß╗▒ ─æß╗Öng VNACCS/VCIS
+-                </CardDescription>
+-              </CardHeader>
+-              <CardContent className="px-5 pb-5 flex-1 flex flex-col justify-around">
+-                <div className="space-y-4 pt-2">
+-                  {channelData.map((item: any, idx: number) => {
+-                    const total = stats?.kpis?.totalDeclarations || 1;
+-                    const pct = ((item.value / total) * 100).toFixed(1);
+-                    return (
+-                      <div key={idx} className="space-y-1.5">
+-                        <div className="flex justify-between items-center text-xs">
+-                          <div className="flex items-center gap-2">
+-                            <span
+-                              className="size-2.5 rounded-full shrink-0"
+-                              style={{ backgroundColor: item.color }}
+-                            />
+-                            <span className="font-bold text-slate-800 dark:text-slate-200">
+-                              {item.name}
+-                            </span>
+-                          </div>
+-                          <div className="flex items-center gap-2 font-mono text-xs tabular-nums">
+-                            <span className="text-slate-500">{formatNumber(item.value)} TK</span>
+-                            <span className="font-bold text-slate-900 dark:text-white">({pct}%)</span>
+-                          </div>
+-                        </div>
+-                        {/* Progress Bar */}
+-                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+-                          <div
+-                            className="h-full rounded-full transition-all duration-500 ease-out"
+-                            style={{ width: `${pct}%`, backgroundColor: item.color }}
+-                          />
+-                        </div>
+-                      </div>
+-                    );
+-                  })}
+-                </div>
+-
+-                {/* Distilled 3-Column Statutory Micro-Grid */}
+-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] space-y-1.5 mt-2">
+-                  <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300 text-[11px]">
+-                    <Info className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+-                    C─ân cß╗⌐ ─Éiß╗üu 32 Luß║¡t Hß║úi quan sß╗æ 54/2014/QH13:
+-                  </div>
+-                  <div className="grid grid-cols-3 gap-1.5 text-[10px] leading-tight">
+-                    <div
+-                      title="Thß╗¥i gian th├┤ng quan ─æiß╗çn tß╗¡: D╞░ß╗¢i 3 gi├óy qua hß╗ç thß╗æng VNACCS/VCIS (─Éiß╗üu 23 Luß║¡t Hß║úi quan)"
+-                      className="p-2 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-950 dark:text-emerald-200 cursor-help"
+-                    >
+-                      <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-0.5">Xanh</span>
+-                      Miß╗àn kiß╗âm tra hß╗ô s╞í v├á h├áng h├│a
+-                    </div>
+-                    <div
+-                      title="Thß╗¥i gian kiß╗âm tra hß╗ô s╞í: Kh├┤ng qu├í 02 giß╗¥ l├ám viß╗çc kß╗â tß╗½ khi tiß║┐p nhß║¡n ─æß╗º hß╗ô s╞í hß║úi quan (Khoß║ún 2 ─Éiß╗üu 23 Luß║¡t Hß║úi quan)"
+-                      className="p-2 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-amber-950 dark:text-amber-200 cursor-help"
+-                    >
+-                      <span className="font-bold text-amber-700 dark:text-amber-400 block mb-0.5">V├áng</span>
+-                      Kiß╗âm tra chi tiß║┐t bß╗Ö chß╗⌐ng tß╗½
+-                    </div>
+-                    <div
+-                      title="Thß╗¥i gian kiß╗âm tra thß╗▒c tß║┐: Kh├┤ng qu├í 08 giß╗¥ l├ám viß╗çc kß╗â tß╗½ khi xuß║Ñt tr├¼nh ─æß╗º h├áng h├│a (Khoß║ún 2 ─Éiß╗üu 23 Luß║¡t Hß║úi quan)"
+-                      className="p-2 rounded-lg bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-800/40 text-rose-950 dark:text-rose-200 cursor-help"
+-                    >
+-                      <span className="font-bold text-rose-700 dark:text-rose-400 block mb-0.5">─Éß╗Å</span>
+-                      Kiß╗âm tra chß╗⌐ng tß╗½ & thß╗▒c tß║┐ h├áng h├│a
+-                    </div>
+-                  </div>
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-          </div>
+-
+-          {/* 4. AI Executive Intelligence Briefing (Instant authoritative presentation) */}
+-          <Card
+-            id="ai-briefing"
+-            role="region"
+-            aria-label="Bß║ún tin nhß║¡n ─æß╗ïnh ─æiß╗üu h├ánh hß║úi quan"
+-            aria-live="polite"
+-            className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-sm page-break-avoid scroll-mt-6"
+-          >
+-            <CardHeader className="pb-3 pt-4 px-5 border-b border-slate-100 dark:border-slate-800">
+-              <div className="flex flex-wrap items-center justify-between gap-3">
+-                <div className="flex items-center gap-2.5">
+-                  <div className="size-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+-                    <BrainCircuit className="size-4" />
+-                  </div>
+-                  <div>
+-                    <CardTitle className="text-sm font-extrabold text-slate-900 dark:text-slate-100">
+-                      Nhß║¡n ─æß╗ïnh ─Éiß╗üu h├ánh Hß║úi quan
+-                    </CardTitle>
+-                    <CardDescription className="text-xs mt-0.5">
+-                      ─É├ính gi├í rß╗ºi ro th├┤ng quan v├á dß╗▒ b├ío tiß║┐n ─æß╗Ö thu ng├ón s├ích tß╗½ m├┤ h├¼nh Gemini
+-                    </CardDescription>
+-                  </div>
+-                </div>
+-
+-                <div className="flex items-center gap-2">
+-                  {aiLoading && (
+-                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+-                      <RefreshCw className="size-3.5 animate-spin" />
+-                      ─Éang tß╗òng hß╗úp nhß║¡n ─æß╗ïnh...
+-                    </span>
+-                  )}
+-                  <Button
+-                    variant="outline"
+-                    size="xs"
+-                    onClick={handleCopyInsight}
+-                    disabled={!aiInsight}
+-                    className={`gap-1 text-xs active:scale-95 transition-all duration-150 ${
+-                      copied
+-                        ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+-                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+-                    }`}
+-                  >
+-                    {copied ? <Check className="size-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="size-3" />}
+-                    {copied ? "─É├ú sao ch├⌐p" : "Sao ch├⌐p b├ío c├ío"}
+-                  </Button>
+-                </div>
+-              </div>
+-            </CardHeader>
+-            
+-            <CardContent className="pt-4 px-6 max-h-[480px] overflow-y-auto print:max-h-none print:overflow-visible">
+-              {aiLoading ? (
+-                <div className="py-10 px-4 flex flex-col items-center justify-center space-y-3.5 text-center">
+-                  <div className="size-11 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center animate-pulse shadow-xs">
+-                    <BrainCircuit className="size-5 animate-spin" />
+-                  </div>
+-                  <div className="space-y-1 max-w-sm">
+-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+-                      M├┤ h├¼nh AI ─æang ph├ón t├¡ch dß╗» liß╗çu Hß║úi quan...
+-                    </div>
+-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+-                      ─Éang tß╗òng hß╗úp 6 sß║»c thuß║┐, ─æo l╞░ß╗¥ng tß╗╖ lß╗ç ph├ón luß╗ông th├┤ng quan v├á x├óy dß╗▒ng b├ío c├ío nhß║¡n ─æß╗ïnh ─æiß╗üu h├ánh.
+-                    </div>
+-                  </div>
+-                </div>
+-              ) : aiInsight ? (
+-                <div className="space-y-1">{renderMarkdown(aiInsight)}</div>
+-              ) : (
+-                <div className="flex flex-col items-center justify-center py-10 space-y-2.5">
+-                  <BrainCircuit className="size-7 text-slate-400" />
+-                  <p className="text-xs text-slate-500 font-medium text-center max-w-md">
+-                    Ch╞░a c├│ bß║ún tin nhß║¡n ─æß╗ïnh cho kß╗│ thß╗æng k├¬ n├áy. Bß║Ñm n├║t &quot;Ph├ón t├¡ch AI&quot; ß╗ƒ thanh c├┤ng cß╗Ñ ─æß╗â m├┤ h├¼nh Gemini tß╗òng hß╗úp ─æ├ính gi├í rß╗ºi ro v├á dß╗▒ b├ío thu ng├ón s├ích.
+-                  </p>
+-                </div>
+-              )}
+-            </CardContent>
+-          </Card>
+-
+-          {/* 5. Interactive Enterprise Rankings Table with Column Sorting */}
+-          <Card id="enterprises" className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-xs page-break-avoid scroll-mt-6 [contain:paint_layout]">
+-            <CardHeader className="pb-3 pt-4 px-5 border-b border-slate-100 dark:border-slate-800">
+-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+-                <div>
+-                  <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+-                    <Globe2 className="size-4 text-blue-600" />
+-                    Top Doanh nghiß╗çp Xuß║Ñt Nhß║¡p Khß║⌐u
+-                  </CardTitle>
+-                  <CardDescription className="text-xs mt-0.5 flex flex-wrap items-center justify-between gap-1">
+-                    <span>
+-                      Xß║┐p hß║íng theo kim ngß║ích quy ─æß╗òi USD v├á sß╗æ l╞░ß╗úng container
+-                      {searchQuery.trim() && (
+-                        <span className="ml-1.5 font-semibold text-blue-600 dark:text-blue-400">
+-                          (T├¼m thß║Ñy {filteredEnterprises.length} / {stats?.enterprises?.length || 0} doanh nghiß╗çp)
+-                        </span>
+-                      )}
+-                    </span>
+-                    <span className="inline-flex sm:hidden text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
+-                      Vuß╗æt ngang xem ─æß╗º cß╗Öt ΓåÆ
+-                    </span>
+-                  </CardDescription>
+-                </div>
+-
+-                <div className="flex items-center gap-2 w-full md:w-auto">
+-                  {/* Search Input with Keyboard Shortcut '/' & Clear Button */}
+-                  <div className="relative flex-1 md:w-72">
+-                    <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+-                    <input
+-                      ref={searchInputRef}
+-                      type="text"
+-                      maxLength={100}
+-                      aria-label="T├¼m kiß║┐m doanh nghiß╗çp theo t├¬n hoß║╖c m├ú sß╗æ thuß║┐"
+-                      placeholder="T├¼m theo t├¬n hoß║╖c MST... (ph├¡m /)"
+-                      value={searchQuery}
+-                      onChange={(e) => setSearchQuery(e.target.value)}
+-                      className="w-full text-xs pl-8 pr-12 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 touch-manipulation"
+-                    />
+-                    {searchQuery && (
+-                      <button
+-                        onClick={() => {
+-                          setSearchQuery("");
+-                          searchInputRef.current?.focus();
+-                        }}
+-                        aria-label="X├│a nß╗Öi dung t├¼m kiß║┐m"
+-                        className="absolute right-7 md:right-8 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+-                      >
+-                        <X className="size-3" />
+-                      </button>
+-                    )}
+-                    <kbd className="hidden md:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-slate-200/70 dark:bg-slate-800 text-slate-500 rounded border border-slate-300/80 dark:border-slate-700 pointer-events-none">
+-                      /
+-                    </kbd>
+-                  </div>
+-
+-                  {/* Excel/CSV Export Button */}
+-                  <Button
+-                    variant="outline"
+-                    size="sm"
+-                    onClick={handleExportCSV}
+-                    disabled={!filteredEnterprises || filteredEnterprises.length === 0}
+-                    className={`gap-1.5 text-xs font-medium shrink-0 active:scale-95 transition-all duration-150 ${
+-                      csvExported
+-                        ? "border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+-                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+-                    }`}
+-                    title="Xuß║Ñt bß║úng Top Doanh nghiß╗çp ra file CSV t╞░╞íng th├¡ch Excel (chuß║⌐n UTF-8 BOM, bß║úo to├án sß╗æ 0 m├ú sß╗æ thuß║┐)"
+-                  >
+-                    {csvExported ? (
+-                      <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+-                    ) : (
+-                      <Download className="size-3.5 text-slate-500 dark:text-slate-400" />
+-                    )}
+-                    <span className="hidden sm:inline">{csvExported ? "─É├ú xuß║Ñt CSV" : "Xuß║Ñt CSV"}</span>
+-                  </Button>
+-                </div>
+-              </div>
+-            </CardHeader>
+-            <CardContent className="p-0">
+-              <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+-                <table className="w-full text-left text-xs border-collapse min-w-[640px]">
+-                  <thead>
+-                    <tr className="bg-slate-50/90 dark:bg-slate-800/60 sticky top-0 z-10 backdrop-blur-xs text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200/80 dark:border-slate-800">
+-                      <th className="py-3 px-4 w-14 text-center">Thß╗⌐ hß║íng</th>
+-                      <th className="py-3 px-4">M├ú sß╗æ thuß║┐</th>
+-                      <th className="py-3 px-4">T├¬n Doanh nghiß╗çp</th>
+-                      <th
+-                        onClick={() => handleSort("valueUSD")}
+-                        aria-label="Sß║»p xß║┐p theo Kim ngß║ích USD"
+-                        className={`py-3 px-4 text-right cursor-pointer transition-colors select-none ${
+-                          sortField === "valueUSD"
+-                            ? "text-blue-600 dark:text-blue-400 font-black"
+-                            : "hover:text-blue-600"
+-                        }`}
+-                      >
+-                        <div className="flex items-center justify-end gap-1">
+-                          Kim ngß║ích (USD)
+-                          <ArrowUpDown
+-                            className={`size-3 transition-transform duration-200 ${
+-                              sortField === "valueUSD"
+-                                ? `text-blue-600 dark:text-blue-400 ${
+-                                    sortOrder === "asc" ? "rotate-180" : ""
+-                                  }`
+-                                : "text-slate-400"
+-                            }`}
+-                          />
+-                        </div>
+-                      </th>
+-                      <th
+-                        onClick={() => handleSort("declarations")}
+-                        aria-label="Sß║»p xß║┐p theo Sß╗æ tß╗¥ khai"
+-                        className={`py-3 px-4 text-center cursor-pointer transition-colors select-none ${
+-                          sortField === "declarations"
+-                            ? "text-blue-600 dark:text-blue-400 font-black"
+-                            : "hover:text-blue-600"
+-                        }`}
+-                      >
+-                        <div className="flex items-center justify-center gap-1">
+-                          Sß╗æ Tß╗¥ khai
+-                          <ArrowUpDown
+-                            className={`size-3 transition-transform duration-200 ${
+-                              sortField === "declarations"
+-                                ? `text-blue-600 dark:text-blue-400 ${
+-                                    sortOrder === "asc" ? "rotate-180" : ""
+-                                  }`
+-                                : "text-slate-400"
+-                            }`}
+-                          />
+-                        </div>
+-                      </th>
+-                      <th
+-                        onClick={() => handleSort("containers")}
+-                        aria-label="Sß║»p xß║┐p theo Container TEU"
+-                        className={`py-3 px-4 text-center cursor-pointer transition-colors select-none ${
+-                          sortField === "containers"
+-                            ? "text-blue-600 dark:text-blue-400 font-black"
+-                            : "hover:text-blue-600"
+-                        }`}
+-                      >
+-                        <div className="flex items-center justify-center gap-1">
+-                          Container (TEU)
+-                          <ArrowUpDown
+-                            className={`size-3 transition-transform duration-200 ${
+-                              sortField === "containers"
+-                                ? `text-blue-600 dark:text-blue-400 ${
+-                                    sortOrder === "asc" ? "rotate-180" : ""
+-                                  }`
+-                                : "text-slate-400"
+-                            }`}
+-                          />
+-                        </div>
+-                      </th>
+-                      <th className="py-3 px-4 w-20 text-center">Hß╗ô s╞í</th>
+-                    </tr>
+-                  </thead>
+-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+-                    {filteredEnterprises.map((ent: any, idx: number) => {
+-                      const rank = idx + 1;
+-                      const isExpanded = expandedEnterpriseId === ent.taxId;
+-                      return (
+-                        <React.Fragment key={ent.taxId || idx}>
+-                          <tr
+-                            onClick={() => toggleExpandEnterprise(ent.taxId)}
+-                            className={`transition-colors font-medium cursor-pointer select-none ${
+-                              isExpanded
+-                                ? "bg-blue-50/70 dark:bg-slate-800/80"
+-                                : "hover:bg-blue-50/30 dark:hover:bg-slate-800/40"
+-                            }`}
+-                          >
+-                            <td className="py-3 px-4 text-center font-bold">
+-                              {rank === 1 ? (
+-                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-black bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+-                                  #1
+-                                </span>
+-                              ) : rank === 2 ? (
+-                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-black bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-400/30">
+-                                  #2
+-                                </span>
+-                              ) : rank === 3 ? (
+-                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-black bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30">
+-                                  #3
+-                                </span>
+-                              ) : (
+-                                <span className="text-slate-500 dark:text-slate-400 font-mono text-xs font-semibold">#{rank}</span>
+-                              )}
+-                            </td>
+-                            <td
+-                              onClick={(e) => {
+-                                e.stopPropagation();
+-                                handleCopyTaxId(ent.taxId);
+-                              }}
+-                              title="Bß║Ñm ─æß╗â sao ch├⌐p M├ú sß╗æ thuß║┐"
+-                              className="py-3 px-4 font-mono text-[11px] whitespace-nowrap cursor-pointer group select-none"
+-                            >
+-                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+-                                <span>{ent.taxId}</span>
+-                                {copiedTaxId === ent.taxId ? (
+-                                  <span className="inline-flex items-center gap-0.5 text-[9px] text-emerald-700 dark:text-emerald-300 font-sans font-bold bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-300/60 dark:border-emerald-700/60 shadow-2xs">
+-                                    <Check className="size-2.5 text-emerald-600 dark:text-emerald-400" /> ─É├ú ch├⌐p
+-                                  </span>
+-                                ) : (
+-                                  <Copy className="size-2.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 group-hover:text-blue-600" />
+-                                )}
+-                              </div>
+-                            </td>
+-                            <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 max-w-[240px] sm:max-w-[320px]">
+-                              <div className="truncate" title={ent.name}>
+-                                {ent.name}
+-                              </div>
+-                            </td>
+-                            <td className="py-3 px-4 text-right font-bold tabular-nums text-slate-900 dark:text-slate-100">
+-                              {formatUSD(ent.valueUSD)}
+-                            </td>
+-                            <td className="py-3 px-4 text-center font-mono tabular-nums text-slate-600 dark:text-slate-400">
+-                              {formatNumber(ent.declarations)}
+-                            </td>
+-                            <td className="py-3 px-4 text-center font-bold tabular-nums text-slate-800 dark:text-slate-200">
+-                              {formatNumber(ent.containers)}
+-                            </td>
+-                            <td className="py-3 px-4 text-center">
+-                              <button
+-                                type="button"
+-                                onClick={(e) => {
+-                                  e.stopPropagation();
+-                                  toggleExpandEnterprise(ent.taxId);
+-                                }}
+-                                aria-expanded={isExpanded}
+-                                aria-label={`${isExpanded ? "Thu gß╗ìn" : "Xem"} hß╗ô s╞í chi tiß║┐t ${ent.name}`}
+-                                className={`inline-flex items-center justify-center size-7 rounded-lg border transition-all duration-200 cursor-pointer ${
+-                                  isExpanded
+-                                    ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+-                                    : "border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
+-                                }`}
+-                              >
+-                                <ChevronDown className={`size-3.5 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+-                              </button>
+-                            </td>
+-                          </tr>
+-
+-                          {/* In-situ Enterprise Dossier Card */}
+-                          {isExpanded && (() => {
+-                            const spark = computeEnterpriseSparkline(ent);
+-                            const avgPerDec = ent.declarations ? Math.round(ent.valueUSD / ent.declarations) : 0;
+-                            const avgPerContainer = ent.containers ? Math.round(ent.valueUSD / ent.containers) : 0;
+-                            const teuPerDec = ent.declarations ? (ent.containers / ent.declarations).toFixed(1) : "0.0";
+-                            const complianceLabel = rank <= 3 ? "Doanh nghiß╗çp ╞»u ti├¬n (AEO)" : rank <= 10 ? "Hß║íng 1: Tu├ón thß╗º Cao (TT 81/2019/TT-BTC)" : "Hß║íng 2: Tu├ón thß╗º Chuß║⌐n";
+-                            const complianceClass = rank <= 3
+-                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300/60 dark:border-emerald-700/60"
+-                              : rank <= 10
+-                              ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300/60 dark:border-blue-700/60"
+-                              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700";
+-
+-                            return (
+-                              <tr className="bg-slate-50/90 dark:bg-slate-900/90 border-y border-slate-200/80 dark:border-slate-800">
+-                                <td colSpan={7} className="p-0">
+-                                  <div className="p-4 md:p-5 space-y-4 animate-in fade-in zoom-in-98 duration-150">
+-                                    {/* Dossier Top Bar */}
+-                                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3.5 border-b border-slate-200/80 dark:border-slate-800">
+-                                      <div className="flex items-start sm:items-center gap-3">
+-                                        <div className="size-9 rounded-xl bg-blue-100/70 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-2xs">
+-                                          <Building2 className="size-4.5" />
+-                                        </div>
+-                                        <div>
+-                                          <div className="flex flex-wrap items-center gap-2">
+-                                            <h4 className="text-sm font-black text-slate-900 dark:text-white">
+-                                              {ent.name}
+-                                            </h4>
+-                                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${complianceClass}`}>
+-                                              <ShieldCheck className="size-3" />
+-                                              {complianceLabel}
+-                                            </span>
+-                                          </div>
+-                                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
+-                                            <span className="font-mono">MST: {ent.taxId}</span>
+-                                            <span className="text-slate-300 dark:text-slate-700">ΓÇó</span>
+-                                            <span>HQ tiß║┐p nhß║¡n: <strong className="text-slate-700 dark:text-slate-300 font-semibold">{getCustomsBranch(ent.name)}</strong></span>
+-                                            <span className="text-slate-300 dark:text-slate-700">ΓÇó</span>
+-                                            <span>Thß╗¥i gian th├┤ng quan: <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">~1.5 gi├óy (Luß╗ông Xanh)</strong></span>
+-                                          </div>
+-                                        </div>
+-                                      </div>
+-
+-                                      {/* Quick Actions */}
+-                                      <div className="flex items-center gap-2 self-start lg:self-center shrink-0">
+-                                        <Button
+-                                          type="button"
+-                                          variant="outline"
+-                                          size="xs"
+-                                          onClick={(e) => {
+-                                            e.stopPropagation();
+-                                            handleCopyDossier(ent, rank);
+-                                          }}
+-                                          className="gap-1.5 text-xs font-semibold border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-2xs active:scale-95 transition-all duration-150 cursor-pointer"
+-                                        >
+-                                          {copiedDossierId === ent.taxId ? (
+-                                            <>
+-                                              <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+-                                              <span>─É├ú sao ch├⌐p tr├¡ch lß╗Ñc</span>
+-                                            </>
+-                                          ) : (
+-                                            <>
+-                                              <Copy className="size-3 text-slate-500" />
+-                                              <span>Sao ch├⌐p tr├¡ch lß╗Ñc hß╗ô s╞í</span>
+-                                            </>
+-                                          )}
+-                                        </Button>
+-                                        <Button
+-                                          type="button"
+-                                          variant="ghost"
+-                                          size="xs"
+-                                          onClick={(e) => {
+-                                            e.stopPropagation();
+-                                            toggleExpandEnterprise(ent.taxId);
+-                                          }}
+-                                          className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 active:scale-95 transition-all duration-150 cursor-pointer"
+-                                        >
+-                                          Thu gß╗ìn
+-                                        </Button>
+-                                      </div>
+-                                    </div>
+-
+-                                    {/* Dossier 3-Column Micro-Analytics */}
+-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+-                                      
+-                                      {/* Column 1: Micro Sparkline */}
+-                                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-2xs space-y-2.5">
+-                                        <div className="flex items-center justify-between">
+-                                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+-                                            Xu h╞░ß╗¢ng Kim ngß║ích 6 Th├íng
+-                                          </span>
+-                                          <span className="text-[11px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-300/60 dark:border-emerald-700/60">
+-                                            +{spark.growthPct}% (T6/T1)
+-                                          </span>
+-                                        </div>
+-
+-                                        {/* Crisp SVG Sparkline */}
+-                                        <div className="py-1">
+-                                          <svg
+-                                            viewBox="0 0 240 44"
+-                                            className="w-full h-11 overflow-visible"
+-                                            aria-label="Biß╗âu ─æß╗ô xu h╞░ß╗¢ng kim ngß║ích 6 th├íng"
+-                                          >
+-                                            <defs>
+-                                              <linearGradient id={`spark-grad-${ent.taxId}`} x1="0" y1="0" x2="0" y2="1">
+-                                                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
+-                                                <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
+-                                              </linearGradient>
+-                                            </defs>
+-                                            <path d={spark.areaD} fill={`url(#spark-grad-${ent.taxId})`} />
+-                                            <path
+-                                              d={spark.pathD}
+-                                              fill="none"
+-                                              stroke="#2563eb"
+-                                              strokeWidth="2"
+-                                              strokeLinecap="round"
+-                                              strokeLinejoin="round"
+-                                            />
+-                                            {spark.points.map((pt, pI) => (
+-                                              <g key={pI}>
+-                                                <circle
+-                                                  cx={pt.x}
+-                                                  cy={pt.y}
+-                                                  r="2.5"
+-                                                  className="fill-blue-600 dark:fill-blue-400 ring-2 ring-white dark:ring-slate-900"
+-                                                />
+-                                              </g>
+-                                            ))}
+-                                          </svg>
+-                                          <div className="flex justify-between text-[10px] font-mono tabular-nums text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+-                                            {spark.rawData.map((m, mIdx) => (
+-                                              <span key={mIdx} title={`${m.month}: $${m.val.toLocaleString("en-US")} USD`}>
+-                                                {m.month}
+-                                              </span>
+-                                            ))}
+-                                          </div>
+-                                        </div>
+-
+-                                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+-                                          <span>Trung b├¼nh/th├íng:</span>
+-                                          <strong className="text-slate-800 dark:text-slate-200 font-bold tabular-nums">
+-                                            {formatUSD(Math.round(ent.valueUSD / 6))}
+-                                          </strong>
+-                                        </div>
+-                                      </div>
+-
+-                                      {/* Column 2: Logistics & Clearance Performance */}
+-                                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-2xs space-y-2.5">
+-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+-                                          Chß╗ë sß╗æ Vß║¡n tß║úi & Tß╗¥ khai
+-                                        </span>
+-                                        <div className="grid grid-cols-2 gap-2 text-xs">
+-                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+-                                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Trß╗ï gi├í / Tß╗¥ khai</div>
+-                                            <div className="font-bold tabular-nums text-slate-900 dark:text-white mt-0.5">
+-                                              {formatUSD(avgPerDec)}
+-                                            </div>
+-                                          </div>
+-                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+-                                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Trß╗ï gi├í / TEU</div>
+-                                            <div className="font-bold tabular-nums text-slate-900 dark:text-white mt-0.5">
+-                                              {formatUSD(avgPerContainer)}
+-                                            </div>
+-                                          </div>
+-                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+-                                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Mß║¡t ─æß╗Ö TEU/Tß╗¥ khai</div>
+-                                            <div className="font-bold tabular-nums text-slate-900 dark:text-white mt-0.5">
+-                                              {teuPerDec} TEU
+-                                            </div>
+-                                          </div>
+-                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+-                                            <div className="text-[10px] text-slate-500 dark:text-slate-400">Tß╗╖ lß╗ç Luß╗ông Xanh</div>
+-                                            <div className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
+-                                              96.2%
+-                                            </div>
+-                                          </div>
+-                                        </div>
+-                                      </div>
+-
+-                                      {/* Column 3: Regimes & Fiscal Profile */}
+-                                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-2xs space-y-2.5">
+-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+-                                          C╞í cß║Ñu Loß║íi h├¼nh & T├ái kh├│a
+-                                        </span>
+-                                        <div className="space-y-1.5 text-xs">
+-                                          <div className="flex items-center justify-between">
+-                                            <span className="text-slate-500 dark:text-slate-400">Quy ─æß╗òi VND:</span>
+-                                            <span className="font-bold tabular-nums text-slate-900 dark:text-white">
+-                                              {formatVND(ent.valueUSD * 25000)}
+-                                            </span>
+-                                          </div>
+-                                          <div className="pt-1.5 space-y-1">
+-                                            <div className="flex justify-between text-[11px]">
+-                                              <span className="text-slate-600 dark:text-slate-300">Gia c├┤ng & SXXK (E21, E31):</span>
+-                                              <span className="font-bold tabular-nums text-slate-900 dark:text-white">65%</span>
+-                                            </div>
+-                                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+-                                              <div className="bg-blue-600 h-full rounded-full w-[65%]" />
+-                                            </div>
+-                                          </div>
+-                                          <div className="space-y-1">
+-                                            <div className="flex justify-between text-[11px]">
+-                                              <span className="text-slate-600 dark:text-slate-300">Kinh doanh ti├¬u d├╣ng (A11):</span>
+-                                              <span className="font-bold tabular-nums text-slate-900 dark:text-white">25%</span>
+-                                            </div>
+-                                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+-                                              <div className="bg-sky-500 h-full rounded-full w-[25%]" />
+-                                            </div>
+-                                          </div>
+-                                        </div>
+-                                      </div>
+-
+-                                    </div>
+-                                  </div>
+-                                </td>
+-                              </tr>
+-                            );
+-                          })()}
+-                        </React.Fragment>
+-                      );
+-                    })}
+-                    {filteredEnterprises.length === 0 && (
+-                      <tr>
+-                        <td colSpan={7} className="py-10 text-center space-y-2.5">
+-                          <p className="text-slate-600 dark:text-slate-300 font-medium text-xs">
+-                            Kh├┤ng t├¼m thß║Ñy doanh nghiß╗çp n├áo khß╗¢p vß╗¢i tß╗½ kh├│a &quot;<span className="font-bold text-slate-900 dark:text-white">{searchQuery}</span>&quot;.
+-                          </p>
+-                          <div className="flex items-center justify-center gap-2 pt-1">
+-                            <button
+-                              onClick={() => {
+-                                setSearchQuery("");
+-                                searchInputRef.current?.focus();
+-                              }}
+-                              className="px-3 py-1 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 transition-colors shadow-2xs"
+-                            >
+-                              X├│a bß╗Ö lß╗ìc t├¼m kiß║┐m
+-                            </button>
+-                          </div>
+-                        </td>
+-                      </tr>
+-                    )}
+-                  </tbody>
+-                </table>
+-              </div>
+-            </CardContent>
+-          </Card>
+-
+-        </div>
+-      </main>
+-
+-      {/* Command HUD / Keyboard Shortcuts Modal */}
+-      {showShortcutsModal && (
+-        <div
+-          role="dialog"
+-          aria-modal="true"
+-          aria-labelledby="shortcuts-title"
+-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+-          onClick={() => setShowShortcutsModal(false)}
+-        >
+-          <div
+-            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+-            onClick={(e) => e.stopPropagation()}
+-          >
+-            {/* Header */}
+-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+-              <div className="flex items-center gap-2.5">
+-                <div className="size-8 rounded-lg bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+-                  <Command className="size-4" />
+-                </div>
+-                <div>
+-                  <h3 id="shortcuts-title" className="text-sm font-bold text-slate-900 dark:text-white">
+-                    Ph├¡m tß║»t hß╗ç thß╗æng (Command HUD)
+-                  </h3>
+-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+-                    Thao t├íc nhanh cho l├únh ─æß║ío & chuy├¬n vi├¬n Hß║úi quan
+-                  </p>
+-                </div>
+-              </div>
+-              <button
+-                type="button"
+-                onClick={() => setShowShortcutsModal(false)}
+-                aria-label="─É├│ng cß╗¡a sß╗ò ph├¡m tß║»t"
+-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+-              >
+-                <X className="size-4" />
+-              </button>
+-            </div>
+-
+-            {/* Shortcut List */}
+-            <div className="p-4 space-y-2 text-xs">
+-              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+-                <span className="text-slate-700 dark:text-slate-300 font-medium">T├¼m kiß║┐m Doanh nghiß╗çp / MST</span>
+-                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+-                  /
+-                </kbd>
+-              </div>
+-
+-              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+-                <span className="text-slate-700 dark:text-slate-300 font-medium">X├│a t├¼m kiß║┐m / ─É├│ng cß╗¡a sß╗ò</span>
+-                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+-                  Esc
+-                </kbd>
+-              </div>
+-
+-              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+-                <span className="text-slate-700 dark:text-slate-300 font-medium">Bß║¡t / Tß║»t giao diß╗çn S├íng / Tß╗æi</span>
+-                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+-                  D
+-                </kbd>
+-              </div>
+-
+-              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+-                <span className="text-slate-700 dark:text-slate-300 font-medium">In ß║Ñn / Xuß║Ñt b├ío c├ío PDF</span>
+-                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+-                  P
+-                </kbd>
+-              </div>
+-
+-              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+-                <span className="text-slate-700 dark:text-slate-300 font-medium">K├¡ch hoß║ít trß╗ú l├╜ AI ph├ón t├¡ch</span>
+-                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+-                  R
+-                </kbd>
+-              </div>
+-
+-              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+-                <span className="text-slate-700 dark:text-slate-300 font-medium">Chuyß╗ân kß╗│: 6 Th├íng / Qu├╜ 1 / Qu├╜ 2</span>
+-                <div className="flex items-center gap-1">
+-                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">1</kbd>
+-                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">2</kbd>
+-                  <kbd className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">3</kbd>
+-                </div>
+-              </div>
+-
+-              <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+-                <span className="text-slate-700 dark:text-slate-300 font-medium">Mß╗ƒ bß║úng trß╗ú gi├║p ph├¡m tß║»t n├áy</span>
+-                <kbd className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+-                  ?
+-                </kbd>
+-              </div>
+-            </div>
+-
+-            {/* Footer */}
+-            <div className="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+-              <span>Bß║Ñm ph├¡m bß║Ñt kß╗│ ngo├ái ├┤ nhß║¡p liß╗çu</span>
+-              <span className="flex items-center gap-1">
+-                Nhß║Ñn <kbd className="px-1.5 py-0.2 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-mono text-[10px]">Esc</kbd> ─æß╗â tho├ít
+-              </span>
+-            </div>
+-          </div>
+-        </div>
+-      )}
+-
+-      {/* Global CSS for Print and Vector PDF formatting */}
+-      <style jsx global>{`
+-        .pdf-report-header {
+-          display: none;
+-        }
+-        @keyframes indeterminate {
+-          0% { transform: translateX(-100%); }
+-          100% { transform: translateX(350%); }
+-        }
+-        @media print {
+-          body {
+-            background: white !important;
+-            color: #0f172a !important;
+-          }
+-          .pdf-report-header {
+-            display: block !important;
+-          }
+-          .page-break-avoid {
+-            page-break-inside: avoid !important;
+-          }
+-        }
+-      `}</style>
+-    </div>
+-  );
++export default function RootPage() {
++  redirect("/dashboard/overview");
+ }
+diff --git a/src/components/AIDrawer.tsx b/src/components/AIDrawer.tsx
+new file mode 100644
+index 0000000..1fe6135
+--- /dev/null
++++ b/src/components/AIDrawer.tsx
+@@ -0,0 +1,162 @@
++"use client";
++
++import React, { useState, useEffect, useRef, useCallback } from "react";
++import { usePathname } from "next/navigation";
++import { Bot, X, Loader2 } from "lucide-react";
++import ReactMarkdown from "react-markdown";
++
++export default function AIDrawer() {
++  const pathname = usePathname();
++  const [isOpen, setIsOpen] = useState(false);
++  const [isLoading, setIsLoading] = useState(false);
++  const [insight, setInsight] = useState<string | null>(null);
++  
++  const abortControllerRef = useRef<AbortController | null>(null);
++
++  const fetchInsight = useCallback(async () => {
++    if (abortControllerRef.current) {
++      abortControllerRef.current.abort();
++    }
++    const controller = new AbortController();
++    abortControllerRef.current = controller;
++
++    try {
++      setIsLoading(true);
++      setInsight(null);
++
++      let dataUrl = "/api/stats";
++      if (pathname.includes("/revenue")) {
++        dataUrl = "/api/v1/revenue";
++      } else if (pathname.includes("/clearance")) {
++        dataUrl = "/api/v1/clearance";
++      }
++
++      // Fetch data for the current route
++      const res = await fetch(dataUrl, { signal: controller.signal });
++      if (!res.ok) {
++        throw new Error(`Failed to fetch data: ${res.status}`);
++      }
++      const json = await res.json();
++      
++      const payloadData = json.data ? json.data : json;
++
++      // Send to AI endpoint
++      const aiRes = await fetch("/api/ai-insight", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({
++          ...payloadData,
++          context: pathname,
++        }),
++        signal: controller.signal
++      });
++
++      if (!aiRes.ok) {
++        throw new Error(`Failed to fetch AI insight: ${aiRes.status}`);
++      }
++
++      const aiJson = await aiRes.json();
++      setInsight(aiJson.insight || aiJson.error || "No insight available.");
++    } catch (error: any) {
++      if (error.name === "AbortError") {
++        return;
++      }
++      setInsight("Failed to fetch insight: " + error.message);
++    } finally {
++      if (abortControllerRef.current === controller) {
++        setIsLoading(false);
++      }
++    }
++  }, [pathname]);
++
++  useEffect(() => {
++    if (isOpen) {
++      fetchInsight();
++    } else {
++      if (abortControllerRef.current) {
++        abortControllerRef.current.abort();
++      }
++    }
++  }, [isOpen, fetchInsight]);
++
++  useEffect(() => {
++    const handleKeyDown = (e: KeyboardEvent) => {
++      if (e.key === "Escape" && isOpen) {
++        setIsOpen(false);
++      }
++    };
++    document.addEventListener("keydown", handleKeyDown);
++    return () => {
++      document.removeEventListener("keydown", handleKeyDown);
++    };
++  }, [isOpen]);
++
++  return (
++    <>
++      {/* Floating Action Button */}
++      <button
++        onClick={() => setIsOpen(true)}
++        className="fixed bottom-6 right-6 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-40 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
++        aria-label="Toggle AI Insight"
++      >
++        <Bot className="w-6 h-6" />
++      </button>
++
++      {/* Drawer Overlay */}
++      {isOpen && (
++        <div 
++          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 transition-opacity"
++          onClick={() => setIsOpen(false)}
++        />
++      )}
++
++      {/* Drawer */}
++      <div
++        role="dialog"
++        aria-modal="true"
++        className={`fixed top-0 right-0 h-full w-[400px] max-w-full bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
++          isOpen ? "translate-x-0" : "translate-x-full"
++        }`}
++      >
++        {/* Header */}
++        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
++          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-500">
++            <Bot className="w-5 h-5" />
++            <h2 className="font-bold text-slate-800 dark:text-slate-100">AI Context Insight</h2>
++          </div>
++          <button 
++            onClick={() => setIsOpen(false)}
++            aria-label="Close drawer"
++            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
++          >
++            <X className="w-5 h-5" />
++          </button>
++        </div>
++
++        {/* Content */}
++        <div className="flex-1 overflow-y-auto p-6 text-sm text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
++          {isLoading ? (
++            <div className="flex flex-col items-center justify-center h-40 gap-3 text-slate-500">
++              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
++              <p>Analyzing {pathname} data...</p>
++            </div>
++          ) : insight ? (
++            <div className="prose prose-sm dark:prose-invert max-w-none">
++              <ReactMarkdown>{insight}</ReactMarkdown>
++            </div>
++          ) : (
++            <div className="text-center text-slate-500 mt-10">
++              <p>No insights loaded.</p>
++              <button 
++                onClick={fetchInsight}
++                className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
++              >
++                Fetch Now
++              </button>
++            </div>
++          )}
++        </div>
++      </div>
++    </>
++  );
++}
+diff --git a/src/lib/mockData.ts b/src/lib/mockData.ts
+index 2473737..fc4cd86 100644
+--- a/src/lib/mockData.ts
++++ b/src/lib/mockData.ts
+@@ -1,3 +1,48 @@
++export interface MockPhiCSHT {
++  id: string;
++  ngayDangKy: string;
++  soTien: number;
++  maHQ?: string;
++  loaiXNK?: string;
++  maDNXNK?: string;
++  loaiHang?: string;
++}
++
++export interface MockHieuSuatCongChuc {
++  id: string;
++  maCongChuc: string;
++  tenCongChuc?: string;
++  ngay: string;
++  toKhaiXanh: number;
++  toKhaiVang: number;
++  toKhaiDo: number;
++  viPham: number;
++  thoiGianXuLyTbPhut?: number;
++}
++
++export interface MockDeclaration {
++  id: string;
++  ngayDangKy: string;
++  tongToKhai: number;
++  maHQ: string;
++  maLH: string;
++  maDNXNK: string;
++  tenDNXNK: string;
++  luong: string;
++  loaiXNK: string;
++  nuocXNK: string;
++  diaDiemGiamSat: string;
++  soLuongCont: number;
++  tongTrongLuongTNE: number;
++  kimNgachUSD: number;
++  tongThueThuKhacVND: number;
++  trongThongKe: boolean;
++  thoiDiemDangKy: string;
++  thoiDiemPhanLuong: string;
++  thoiDiemThongQuan: string;
++  maCongChuc: string;
++}
++
+ export interface DashboardData {
+   isMock: boolean;
+   kpis: {
+@@ -6,6 +51,12 @@ export interface DashboardData {
+     totalContainers: number;
+     totalWeightTNE: number;
+     totalTaxVND: number;
++    totalDeclarationsInStats?: number;
++    totalValueUSDInStats?: number;
++    totalPhiCSHTVND?: number;
++    targetPhiCSHTVND?: number;
++    activeEnterprises?: number;
++    newEnterprises?: number;
+   };
+   taxBreakdown: {
+     thueXNK: number;
+@@ -21,6 +72,7 @@ export interface DashboardData {
+     valueUSD: number;
+     declarations: number;
+     taxVND: number;
++    feeCSHTVND?: number;
+   }>;
+   channels: Array<{
+     name: string;
+@@ -52,8 +104,152 @@ export interface DashboardData {
+     declarations: number;
+     containers: number;
+   }>;
++  phiCSHT?: {
++    totalFeeVND: number;
++    targetVND: number;
++    completionRate: number;
++    growthYoY: number;
++    growthMoM: number;
++    byType: Array<{ type: string; valueVND: number; percentage: number }>;
++    byCargo: Array<{ cargo: string; valueVND: number; percentage: number }>;
++    topEnterprises: Array<{ taxId: string; name: string; feeVND: number; count: number }>;
++    trends: Array<{ date: string; feeVND: number }>;
++  };
++  officerPerformance?: Array<{
++    maCongChuc: string;
++    tenCongChuc: string;
++    workload: number;
++    toKhaiXanh: number;
++    toKhaiVang: number;
++    toKhaiDo: number;
++    viPham: number;
++    hitRatePct: number;
++    avgLeadTimeMinutes: number;
++  }>;
++  clearance?: {
++    totalInStats: number;
++    totalOutOfStats: number;
++    inStatsValueUSD: number;
++    outOfStatsValueUSD: number;
++    exportDeclarations: number;
++    exportValueUSD: number;
++    importDeclarations: number;
++    importValueUSD: number;
++    tradeBalanceUSD: number;
++    avgLeadTimeMinutes: number;
++    leadTimeByLane: {
++      green: number;
++      yellow: number;
++      red: number;
++    };
++  };
+ }
+ 
++export const MOCK_OFFICERS = [
++  { code: 'CC01', name: 'Nguyß╗àn V─ân An' },
++  { code: 'CC02', name: 'Trß║ºn Thß╗ï B├¼nh' },
++  { code: 'CC03', name: 'L├¬ Ho├áng C╞░ß╗¥ng' },
++  { code: 'CC04', name: 'Phß║ím Minh ─Éß╗⌐c' },
++  { code: 'CC05', name: 'Ho├áng Thß╗ï Mai' },
++  { code: 'CC06', name: 'V┼⌐ Quß╗æc H├╣ng' },
++  { code: 'CC07', name: '─Éß╗ù B├¡ch Ngß╗ìc' },
++  { code: 'CC08', name: 'Ng├┤ Tuß║Ñn Anh' }
++];
++
++export const mockPhiCSHT: MockPhiCSHT[] = [
++  { id: 'phi-001', ngayDangKy: '2026-01-15', soTien: 1450000, maHQ: '01AB', loaiXNK: 'NK', maDNXNK: '0100793405', loaiHang: 'Container' },
++  { id: 'phi-002', ngayDangKy: '2026-01-22', soTien: 3200000, maHQ: '01AB', loaiXNK: 'XK', maDNXNK: '3600252879', loaiHang: 'H├áng rß╗¥i' },
++  { id: 'phi-003', ngayDangKy: '2026-02-10', soTien: 950000, maHQ: '02CI', loaiXNK: 'NK', maDNXNK: '0100101308', loaiHang: 'Container' },
++  { id: 'phi-004', ngayDangKy: '2026-02-18', soTien: 2100000, maHQ: '03EE', loaiXNK: 'NK', maDNXNK: '3500101112', loaiHang: 'H├áng lß╗Ång' },
++  { id: 'phi-005', ngayDangKy: '2026-03-05', soTien: 1800000, maHQ: '43NG', loaiXNK: 'XK', maDNXNK: '0302568603', loaiHang: 'Container' },
++  { id: 'phi-006', ngayDangKy: '2026-03-19', soTien: 4500000, maHQ: '51CD', loaiXNK: 'NK', maDNXNK: '0100150619', loaiHang: 'H├áng lß╗Ång' },
++  { id: 'phi-007', ngayDangKy: '2026-04-12', soTien: 2750000, maHQ: '01AB', loaiXNK: 'XK', maDNXNK: '1800155054', loaiHang: 'Container' },
++  { id: 'phi-008', ngayDangKy: '2026-04-28', soTien: 1200000, maHQ: '02CI', loaiXNK: 'NK', maDNXNK: '0300996328', loaiHang: 'Container' },
++  { id: 'phi-009', ngayDangKy: '2026-05-14', soTien: 3100000, maHQ: '03EE', loaiXNK: 'NK', maDNXNK: '3700148156', loaiHang: 'H├áng rß╗¥i' },
++  { id: 'phi-010', ngayDangKy: '2026-05-27', soTien: 1650000, maHQ: '43NG', loaiXNK: 'XK', maDNXNK: '0300481234', loaiHang: 'Container' },
++  { id: 'phi-011', ngayDangKy: '2026-06-02', soTien: 2900000, maHQ: '51CD', loaiXNK: 'NK', maDNXNK: '0100793405', loaiHang: 'Container' }
++];
++
++export const mockHieuSuatCongChuc: MockHieuSuatCongChuc[] = [
++  { id: 'hs-001', maCongChuc: 'CC01', tenCongChuc: 'Nguyß╗àn V─ân An', ngay: '2026-05-02', toKhaiXanh: 28, toKhaiVang: 12, toKhaiDo: 3, viPham: 1, thoiGianXuLyTbPhut: 24.5 },
++  { id: 'hs-002', maCongChuc: 'CC02', tenCongChuc: 'Trß║ºn Thß╗ï B├¼nh', ngay: '2026-05-02', toKhaiXanh: 32, toKhaiVang: 8, toKhaiDo: 2, viPham: 0, thoiGianXuLyTbPhut: 18.2 },
++  { id: 'hs-003', maCongChuc: 'CC03', tenCongChuc: 'L├¬ Ho├áng C╞░ß╗¥ng', ngay: '2026-05-02', toKhaiXanh: 22, toKhaiVang: 15, toKhaiDo: 4, viPham: 2, thoiGianXuLyTbPhut: 32.1 },
++  { id: 'hs-004', maCongChuc: 'CC04', tenCongChuc: 'Phß║ím Minh ─Éß╗⌐c', ngay: '2026-05-02', toKhaiXanh: 26, toKhaiVang: 10, toKhaiDo: 2, viPham: 0, thoiGianXuLyTbPhut: 22.4 },
++  { id: 'hs-005', maCongChuc: 'CC05', tenCongChuc: 'Ho├áng Thß╗ï Mai', ngay: '2026-05-02', toKhaiXanh: 30, toKhaiVang: 9, toKhaiDo: 1, viPham: 0, thoiGianXuLyTbPhut: 19.8 },
++  { id: 'hs-006', maCongChuc: 'CC06', tenCongChuc: 'V┼⌐ Quß╗æc H├╣ng', ngay: '2026-05-02', toKhaiXanh: 25, toKhaiVang: 14, toKhaiDo: 3, viPham: 1, thoiGianXuLyTbPhut: 28.6 },
++  { id: 'hs-007', maCongChuc: 'CC07', tenCongChuc: '─Éß╗ù B├¡ch Ngß╗ìc', ngay: '2026-05-02', toKhaiXanh: 35, toKhaiVang: 6, toKhaiDo: 1, viPham: 0, thoiGianXuLyTbPhut: 16.5 },
++  { id: 'hs-008', maCongChuc: 'CC08', tenCongChuc: 'Ng├┤ Tuß║Ñn Anh', ngay: '2026-05-02', toKhaiXanh: 20, toKhaiVang: 16, toKhaiDo: 5, viPham: 2, thoiGianXuLyTbPhut: 36.4 }
++];
++
++export const mockDeclarations: MockDeclaration[] = [
++  {
++    id: 'tk-001',
++    ngayDangKy: '2026-05-10',
++    tongToKhai: 1,
++    maHQ: '01AB',
++    maLH: 'A11',
++    maDNXNK: '0100793405',
++    tenDNXNK: 'C├öNG TY TNHH SAMSUNG ELECTRONICS VIß╗åT NAM',
++    luong: 'Xanh',
++    loaiXNK: 'NK',
++    nuocXNK: 'H├án Quß╗æc',
++    diaDiemGiamSat: 'Cß║óNG Hß║óI PH├ÆNG',
++    soLuongCont: 4,
++    tongTrongLuongTNE: 48.5,
++    kimNgachUSD: 185000,
++    tongThueThuKhacVND: 46250000,
++    trongThongKe: true,
++    thoiDiemDangKy: '2026-05-10T08:15:00',
++    thoiDiemPhanLuong: '2026-05-10T08:17:30',
++    thoiDiemThongQuan: '2026-05-10T08:21:00',
++    maCongChuc: 'CC01'
++  },
++  {
++    id: 'tk-002',
++    ngayDangKy: '2026-05-11',
++    tongToKhai: 1,
++    maHQ: '01AB',
++    maLH: 'B11',
++    maDNXNK: '3600252879',
++    tenDNXNK: 'C├öNG TY Cß╗ö PHß║ªN TH├ëP H├ÆA PH├üT DUNG QUß║ñT',
++    luong: 'V├áng',
++    loaiXNK: 'XK',
++    nuocXNK: 'Hoa Kß╗│',
++    diaDiemGiamSat: 'Cß║óNG Hß║óI PH├ÆNG',
++    soLuongCont: 6,
++    tongTrongLuongTNE: 120.0,
++    kimNgachUSD: 310000,
++    tongThueThuKhacVND: 0,
++    trongThongKe: true,
++    thoiDiemDangKy: '2026-05-11T09:30:00',
++    thoiDiemPhanLuong: '2026-05-11T09:33:00',
++    thoiDiemThongQuan: '2026-05-11T10:15:00',
++    maCongChuc: 'CC02'
++  },
++  {
++    id: 'tk-003',
++    ngayDangKy: '2026-05-12',
++    tongToKhai: 1,
++    maHQ: '02CI',
++    maLH: 'G11',
++    maDNXNK: '0100101308',
++    tenDNXNK: 'Tß╗öNG C├öNG TY H├ÇNG KH├öNG VIß╗åT NAM - CTCP',
++    luong: '─Éß╗Å',
++    loaiXNK: 'NK',
++    nuocXNK: '─Éß╗⌐c',
++    diaDiemGiamSat: 'Cß║óNG Hß║óI PH├ÆNG',
++    soLuongCont: 2,
++    tongTrongLuongTNE: 15.2,
++    kimNgachUSD: 95000,
++    tongThueThuKhacVND: 12500000,
++    trongThongKe: false, // Sample / transit / non-trade
++    thoiDiemDangKy: '2026-05-12T10:00:00',
++    thoiDiemPhanLuong: '2026-05-12T10:04:00',
++    thoiDiemThongQuan: '2026-05-12T14:45:00',
++    maCongChuc: 'CC03'
++  }
++];
++
+ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: string): DashboardData {
+   // Generate high quality mock data based on Vietnamese customs context
+   const start = startDate ? new Date(startDate) : new Date('2026-01-01');
+@@ -86,16 +282,22 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+   const totalContainers = Math.round(28400 * multiplier);
+   const totalWeightTNE = 352400 * multiplier;
+   const totalTaxVND = 1254300000000 * multiplier; // 1,254 billion VND
++  
++  // Statistical Trade breakdown
++  const totalDeclarationsInStats = Math.round(totalDeclarations * 0.925);
++  const totalValueUSDInStats = Math.round(totalValueUSD * 0.94);
++  const totalPhiCSHTVND = Math.round(48500000000 * multiplier); // ~48.5 billion VND
++  const targetPhiCSHTVND = Math.round(52000000000 * multiplier); // ~52 billion target
+ 
+   // Generate trends
+   const trends = months.map((m, idx) => {
+-    // Generate slight seasonality
+     const factor = 0.85 + Math.sin(idx * 1.5) * 0.15;
+     return {
+       date: m,
+       valueUSD: Math.round((totalValueUSD / months.length) * factor),
+       declarations: Math.round((totalDeclarations / months.length) * factor),
+       taxVND: Math.round((totalTaxVND / months.length) * factor),
++      feeCSHTVND: Math.round((totalPhiCSHTVND / months.length) * factor),
+     };
+   });
+ 
+@@ -131,7 +333,7 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+ 
+   const commodities = commoditiesList.map(item => ({
+     name: item.name,
+-    valueVND: Math.round(totalValueUSD * 25000 * item.pct), // Approximate USD to VND
++    valueVND: Math.round(totalValueUSD * 25000 * item.pct),
+     taxVND: Math.round(totalTaxVND * item.taxPct),
+     quantity: Math.round(totalWeightTNE * item.pct * 1.5),
+   })).sort((a, b) => b.valueVND - a.valueVND);
+@@ -160,6 +362,77 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+     { taxId: '0300996328', name: 'C├öNG TY TNHH N╞»ß╗ÜC GIß║óI KH├üT COCA-COLA VIß╗åT NAM', valueUSD: Math.round(totalValueUSD * 0.025), declarations: Math.round(totalDeclarations * 0.025), containers: Math.round(totalContainers * 0.025) },
+   ].sort((a, b) => b.valueUSD - a.valueUSD);
+ 
++  // URD Section: Ph├¡ C╞í Sß╗ƒ Hß║í Tß║ºng (Seaport Infrastructure Fee)
++  const phiCSHT = {
++    totalFeeVND: totalPhiCSHTVND,
++    targetVND: targetPhiCSHTVND,
++    completionRate: Math.round((totalPhiCSHTVND / targetPhiCSHTVND) * 1000) / 10,
++    growthYoY: 8.4,
++    growthMoM: 3.1,
++    byType: [
++      { type: 'Nhß║¡p khß║⌐u', valueVND: Math.round(totalPhiCSHTVND * 0.58), percentage: 58 },
++      { type: 'Xuß║Ñt khß║⌐u', valueVND: Math.round(totalPhiCSHTVND * 0.42), percentage: 42 }
++    ],
++    byCargo: [
++      { cargo: 'Container', valueVND: Math.round(totalPhiCSHTVND * 0.68), percentage: 68 },
++      { cargo: 'H├áng rß╗¥i', valueVND: Math.round(totalPhiCSHTVND * 0.20), percentage: 20 },
++      { cargo: 'H├áng lß╗Ång', valueVND: Math.round(totalPhiCSHTVND * 0.12), percentage: 12 }
++    ],
++    topEnterprises: [
++      { taxId: '0100793405', name: 'C├öNG TY TNHH SAMSUNG ELECTRONICS VIß╗åT NAM', feeVND: Math.round(totalPhiCSHTVND * 0.18), count: 2150 },
++      { taxId: '3600252879', name: 'C├öNG TY Cß╗ö PHß║ªN TH├ëP H├ÆA PH├üT DUNG QUß║ñT', feeVND: Math.round(totalPhiCSHTVND * 0.12), count: 1420 },
++      { taxId: '0100150619', name: 'Tß║¼P ─ÉO├ÇN X─éNG Dß║ªU VIß╗åT NAM (PETROLIMEX)', feeVND: Math.round(totalPhiCSHTVND * 0.09), count: 850 },
++      { taxId: '1800155054', name: 'C├öNG TY Cß╗ö PHß║ªN Lß╗îC H├ôA Dß║ªU B├îNH S╞áN', feeVND: Math.round(totalPhiCSHTVND * 0.08), count: 760 },
++      { taxId: '0302568603', name: 'C├öNG TY Cß╗ö PHß║ªN Sß╗«A VIß╗åT NAM (VINAMILK)', feeVND: Math.round(totalPhiCSHTVND * 0.06), count: 620 }
++    ],
++    trends: months.map((m, idx) => ({
++      date: m,
++      feeVND: Math.round((totalPhiCSHTVND / months.length) * (0.88 + Math.sin(idx * 1.2) * 0.14))
++    }))
++  };
++
++  // URD Section: Officer Performance (Workload, Lead Time, Hit Rate)
++  const officerPerformance = MOCK_OFFICERS.map((off, idx) => {
++    const toKhaiXanh = 180 + idx * 25;
++    const toKhaiVang = 85 + (idx % 3) * 15;
++    const toKhaiDo = 20 + (idx % 4) * 8;
++    const workload = toKhaiXanh + toKhaiVang + toKhaiDo;
++    const viPham = Math.round(toKhaiDo * 0.25 + toKhaiVang * 0.04);
++    const hitRatePct = Math.round((viPham / (toKhaiVang + toKhaiDo)) * 1000) / 10;
++    const avgLeadTimeMinutes = Math.round((18 + (idx % 5) * 6.5) * 10) / 10;
++
++    return {
++      maCongChuc: off.code,
++      tenCongChuc: off.name,
++      workload,
++      toKhaiXanh,
++      toKhaiVang,
++      toKhaiDo,
++      viPham,
++      hitRatePct,
++      avgLeadTimeMinutes
++    };
++  });
++
++  // URD Section: Clearance Statistics (Statistical goods filtering)
++  const clearance = {
++    totalInStats: totalDeclarationsInStats,
++    totalOutOfStats: totalDeclarations - totalDeclarationsInStats,
++    inStatsValueUSD: totalValueUSDInStats,
++    outOfStatsValueUSD: totalValueUSD - totalValueUSDInStats,
++    exportDeclarations: Math.round(totalDeclarationsInStats * 0.46),
++    exportValueUSD: Math.round(totalValueUSDInStats * 0.48),
++    importDeclarations: Math.round(totalDeclarationsInStats * 0.54),
++    importValueUSD: Math.round(totalValueUSDInStats * 0.52),
++    tradeBalanceUSD: Math.round(totalValueUSDInStats * (0.48 - 0.52)),
++    avgLeadTimeMinutes: 24.8,
++    leadTimeByLane: {
++      green: 3.2,
++      yellow: 36.5,
++      red: 220.0
++    }
++  };
++
+   return {
+     isMock: true,
+     kpis: {
+@@ -168,6 +441,12 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+       totalContainers,
+       totalWeightTNE,
+       totalTaxVND,
++      totalDeclarationsInStats,
++      totalValueUSDInStats,
++      totalPhiCSHTVND,
++      targetPhiCSHTVND,
++      activeEnterprises: enterprises.length * 15,
++      newEnterprises: 18
+     },
+     taxBreakdown,
+     trends,
+@@ -176,5 +455,41 @@ export function getMockStats(startDate?: string, endDate?: string, loaiXNK?: str
+     countries,
+     enterprises,
+     topEnterprises: enterprises,
++    phiCSHT,
++    officerPerformance,
++    clearance
+   };
+ }
++
++// Helpers for Task 2 endpoints fallback
++export function getMockRevenue(startDate?: string, endDate?: string, branch?: string) {
++  const stats = getMockStats(startDate, endDate);
++  return {
++    isMock: true,
++    branch: branch || 'ALL',
++    kpis: stats.kpis,
++    taxBreakdown: stats.taxBreakdown,
++    phiCSHT: stats.phiCSHT,
++    trends: stats.trends
++  };
++}
++
++export function getMockClearance(startDate?: string, endDate?: string, branch?: string) {
++  const stats = getMockStats(startDate, endDate);
++  return {
++    isMock: true,
++    branch: branch || 'ALL',
++    clearance: stats.clearance,
++    channels: stats.channels,
++    commodities: stats.commodities
++  };
++}
++
++export function getMockOfficerPerformance(startDate?: string, endDate?: string) {
++  const stats = getMockStats(startDate, endDate);
++  return {
++    isMock: true,
++    officers: stats.officerPerformance
++  };
++}
++

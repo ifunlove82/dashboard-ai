@@ -1,0 +1,202 @@
+﻿fecc0c5 fix: resolve AIDrawer issues from task 4 review f4cb180 feat(ai): integrate global context-aware AI drawer
+
+ src/app/dashboard/layout.tsx |   3 +  src/components/AIDrawer.tsx  | 162 +++++++++++++++++++++++++++++++++++++++++++  2 files changed, 165 insertions(+)
+
+diff --git a/src/app/dashboard/layout.tsx b/src/app/dashboard/layout.tsx
+index 3847f3a..6fcf835 100644
+--- a/src/app/dashboard/layout.tsx
++++ b/src/app/dashboard/layout.tsx
+@@ -10,10 +10,12 @@ import {
+   Building2,
+   Users,
+   ShieldCheck,
+ } from "lucide-react";
+ 
++import AIDrawer from "@/components/AIDrawer";
++
+ interface NavItem {
+   name: string;
+   href: string;
+   icon: React.ComponentType<{ className?: string }>;
+   description: string;
+@@ -59,10 +61,11 @@ export default function DashboardLayout({
+ }) {
+   const pathname = usePathname();
+ 
+   return (
+     <div className="flex min-h-screen bg-slate-100/70 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased">
++      <AIDrawer />
+       {/* Sidebar Navigation */}
+       <aside className="w-64 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/95 p-5 flex flex-col justify-between shrink-0 hidden md:flex sticky top-0 h-screen">
+         <div className="space-y-6">
+           {/* Logo & Operational Title */}
+           <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+diff --git a/src/components/AIDrawer.tsx b/src/components/AIDrawer.tsx
+new file mode 100644
+index 0000000..1fe6135
+--- /dev/null
++++ b/src/components/AIDrawer.tsx
+@@ -0,0 +1,162 @@
++"use client";
++
++import React, { useState, useEffect, useRef, useCallback } from "react";
++import { usePathname } from "next/navigation";
++import { Bot, X, Loader2 } from "lucide-react";
++import ReactMarkdown from "react-markdown";
++
++export default function AIDrawer() {
++  const pathname = usePathname();
++  const [isOpen, setIsOpen] = useState(false);
++  const [isLoading, setIsLoading] = useState(false);
++  const [insight, setInsight] = useState<string | null>(null);
++  
++  const abortControllerRef = useRef<AbortController | null>(null);
++
++  const fetchInsight = useCallback(async () => {
++    if (abortControllerRef.current) {
++      abortControllerRef.current.abort();
++    }
++    const controller = new AbortController();
++    abortControllerRef.current = controller;
++
++    try {
++      setIsLoading(true);
++      setInsight(null);
++
++      let dataUrl = "/api/stats";
++      if (pathname.includes("/revenue")) {
++        dataUrl = "/api/v1/revenue";
++      } else if (pathname.includes("/clearance")) {
++        dataUrl = "/api/v1/clearance";
++      }
++
++      // Fetch data for the current route
++      const res = await fetch(dataUrl, { signal: controller.signal });
++      if (!res.ok) {
++        throw new Error(`Failed to fetch data: ${res.status}`);
++      }
++      const json = await res.json();
++      
++      const payloadData = json.data ? json.data : json;
++
++      // Send to AI endpoint
++      const aiRes = await fetch("/api/ai-insight", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({
++          ...payloadData,
++          context: pathname,
++        }),
++        signal: controller.signal
++      });
++
++      if (!aiRes.ok) {
++        throw new Error(`Failed to fetch AI insight: ${aiRes.status}`);
++      }
++
++      const aiJson = await aiRes.json();
++      setInsight(aiJson.insight || aiJson.error || "No insight available.");
++    } catch (error: any) {
++      if (error.name === "AbortError") {
++        return;
++      }
++      setInsight("Failed to fetch insight: " + error.message);
++    } finally {
++      if (abortControllerRef.current === controller) {
++        setIsLoading(false);
++      }
++    }
++  }, [pathname]);
++
++  useEffect(() => {
++    if (isOpen) {
++      fetchInsight();
++    } else {
++      if (abortControllerRef.current) {
++        abortControllerRef.current.abort();
++      }
++    }
++  }, [isOpen, fetchInsight]);
++
++  useEffect(() => {
++    const handleKeyDown = (e: KeyboardEvent) => {
++      if (e.key === "Escape" && isOpen) {
++        setIsOpen(false);
++      }
++    };
++    document.addEventListener("keydown", handleKeyDown);
++    return () => {
++      document.removeEventListener("keydown", handleKeyDown);
++    };
++  }, [isOpen]);
++
++  return (
++    <>
++      {/* Floating Action Button */}
++      <button
++        onClick={() => setIsOpen(true)}
++        className="fixed bottom-6 right-6 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-40 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
++        aria-label="Toggle AI Insight"
++      >
++        <Bot className="w-6 h-6" />
++      </button>
++
++      {/* Drawer Overlay */}
++      {isOpen && (
++        <div 
++          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 transition-opacity"
++          onClick={() => setIsOpen(false)}
++        />
++      )}
++
++      {/* Drawer */}
++      <div
++        role="dialog"
++        aria-modal="true"
++        className={`fixed top-0 right-0 h-full w-[400px] max-w-full bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
++          isOpen ? "translate-x-0" : "translate-x-full"
++        }`}
++      >
++        {/* Header */}
++        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
++          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-500">
++            <Bot className="w-5 h-5" />
++            <h2 className="font-bold text-slate-800 dark:text-slate-100">AI Context Insight</h2>
++          </div>
++          <button 
++            onClick={() => setIsOpen(false)}
++            aria-label="Close drawer"
++            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
++          >
++            <X className="w-5 h-5" />
++          </button>
++        </div>
++
++        {/* Content */}
++        <div className="flex-1 overflow-y-auto p-6 text-sm text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
++          {isLoading ? (
++            <div className="flex flex-col items-center justify-center h-40 gap-3 text-slate-500">
++              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
++              <p>Analyzing {pathname} data...</p>
++            </div>
++          ) : insight ? (
++            <div className="prose prose-sm dark:prose-invert max-w-none">
++              <ReactMarkdown>{insight}</ReactMarkdown>
++            </div>
++          ) : (
++            <div className="text-center text-slate-500 mt-10">
++              <p>No insights loaded.</p>
++              <button 
++                onClick={fetchInsight}
++                className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
++              >
++                Fetch Now
++              </button>
++            </div>
++          )}
++        </div>
++      </div>
++    </>
++  );
++}
+
