@@ -1,4 +1,4 @@
-const sql = require('mssql');
+﻿const sql = require('mssql');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -37,54 +37,36 @@ const config = {
 };
 
 const ENTERPRISES = [
-  { taxId: '0100793405', name: 'CÔNG TY TNHH SAMSUNG ELECTRONICS VIỆT NAM' },
-  { taxId: '3600252879', name: 'CÔNG TY CỔ PHẦN THÉP HÒA PHÁT DUNG QUẤT' },
-  { taxId: '0100101308', name: 'TỔNG CÔNG TY HÀNG KHÔNG VIỆT NAM - CTCP' },
-  { taxId: '3500101112', name: 'LIÊN DOANH VIỆT - NGA VIETSOVPETRO' },
-  { taxId: '0302568603', name: 'CÔNG TY CỔ PHẦN SỮA VIỆT NAM (VINAMILK)' },
-  { taxId: '0100150619', name: 'TẬP ĐOÀN XĂNG DẦU VIỆT NAM (PETROLIMEX)' },
-  { taxId: '1800155054', name: 'CÔNG TY CỔ PHẦN LỌC HÓA DẦU BÌNH SƠN' },
-  { taxId: '0300996328', name: 'CÔNG TY TNHH NƯỚC GIẢI KHÁT COCA-COLA VIỆT NAM' },
-  { taxId: '3700148156', name: 'CÔNG TY TNHH MINH LONG I' },
-  { taxId: '0300481234', name: 'TẬP ĐOÀN DỆT MAY VIỆT NAM (VINATEX)' }
+  { taxId: '0100793405', name: 'CÃ”NG TY TNHH SAMSUNG ELECTRONICS VIá»†T NAM' },
+  { taxId: '3600252879', name: 'CÃ”NG TY Cá»” PHáº¦N THÃ‰P HÃ’A PHÃT DUNG QUáº¤T' },
+  { taxId: '0100101308', name: 'Tá»”NG CÃ”NG TY HÃ€NG KHÃ”NG VIá»†T NAM - CTCP' },
+  { taxId: '3500101112', name: 'LIÃŠN DOANH VIá»†T - NGA VIETSOVPETRO' },
+  { taxId: '0302568603', name: 'CÃ”NG TY Cá»” PHáº¦N Sá»®A VIá»†T NAM (VINAMILK)' },
+  { taxId: '0100150619', name: 'Táº¬P ÄOÃ€N XÄ‚NG Dáº¦U VIá»†T NAM (PETROLIMEX)' },
+  { taxId: '1800155054', name: 'CÃ”NG TY Cá»” PHáº¦N Lá»ŒC HÃ“A Dáº¦U BÃŒNH SÆ N' },
+  { taxId: '0300996328', name: 'CÃ”NG TY TNHH NÆ¯á»šC GIáº¢I KHÃT COCA-COLA VIá»†T NAM' },
+  { taxId: '3700148156', name: 'CÃ”NG TY TNHH MINH LONG I' },
+  { taxId: '0300481234', name: 'Táº¬P ÄOÃ€N Dá»†T MAY VIá»†T NAM (VINATEX)' }
 ];
 
-const COMMODITIES = [
-  { name: 'Máy tính, sản phẩm điện tử và linh kiện', hs: '85176200', group: 'Điện tử' },
-  { name: 'Máy móc, thiết bị, dụng cụ phụ tùng khác', hs: '84713010', group: 'Máy móc' },
-  { name: 'Điện thoại các loại và linh kiện', hs: '85171300', group: 'Điện thoại' },
-  { name: 'Sắt thép các loại', hs: '72083990', group: 'Kim loại' },
-  { name: 'Dệt, may, da giày', hs: '64039990', group: 'Dệt may' },
-  { name: 'Xăng dầu các loại', hs: '27101919', group: 'Nhiên liệu' },
-  { name: 'Hóa chất và sản phẩm hóa chất', hs: '28030041', group: 'Hóa chất' },
-  { name: 'Nông sản, thủy sản các loại', hs: '03061790', group: 'Nông sản' }
-];
+const COMMODITIES = [{name: 'Electronics', hs: '85176200', group: 'Tech'}, {name: 'Machinery', hs: '84713010', group: 'Tech'}, {name: 'Garments', hs: '64039990', group: 'Fashion'}];
 
-const COUNTRIES = [
-  { code: 'CN', name: 'Trung Quốc' },
-  { code: 'US', name: 'Hoa Kỳ' },
-  { code: 'KR', name: 'Hàn Quốc' },
-  { code: 'JP', name: 'Nhật Bản' },
-  { code: 'DE', name: 'Đức' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'TH', name: 'Thái Lan' },
-  { code: 'AU', name: 'Australia' }
-];
+const COUNTRIES = [{code: 'CN', name: 'China'}, {code: 'US', name: 'USA'}, {code: 'KR', name: 'Korea'}];
 
 const CUSTOMS_BRANCHES = ['01AB', '02CI', '03EE', '43NG', '51CD'];
 const REGIMES = ['A11', 'A12', 'B11', 'E31', 'G11', 'H11'];
-const STREAM_CHANNELS = ['Xanh', 'Vàng', 'Đỏ'];
-const CARGO_TYPES = ['Container', 'Hàng rời', 'Hàng lỏng'];
+const STREAM_CHANNELS = ['Xanh', 'VÃ ng', 'Äá»'];
+const CARGO_TYPES = ['Container', 'HÃ ng rá»i', 'HÃ ng lá»ng'];
 
 const OFFICERS = [
-  { code: 'CC01', name: 'Nguyễn Văn An' },
-  { code: 'CC02', name: 'Trần Thị Bình' },
-  { code: 'CC03', name: 'Lê Hoàng Cường' },
-  { code: 'CC04', name: 'Phạm Minh Đức' },
-  { code: 'CC05', name: 'Hoàng Thị Mai' },
-  { code: 'CC06', name: 'Vũ Quốc Hùng' },
-  { code: 'CC07', name: 'Đỗ Bích Ngọc' },
-  { code: 'CC08', name: 'Ngô Tuấn Anh' }
+  { code: 'CC01', name: 'Nguyá»…n VÄƒn An' },
+  { code: 'CC02', name: 'Tráº§n Thá»‹ BÃ¬nh' },
+  { code: 'CC03', name: 'LÃª HoÃ ng CÆ°á»ng' },
+  { code: 'CC04', name: 'Pháº¡m Minh Äá»©c' },
+  { code: 'CC05', name: 'HoÃ ng Thá»‹ Mai' },
+  { code: 'CC06', name: 'VÅ© Quá»‘c HÃ¹ng' },
+  { code: 'CC07', name: 'Äá»— BÃ­ch Ngá»c' },
+  { code: 'CC08', name: 'NgÃ´ Tuáº¥n Anh' }
 ];
 
 async function main() {
@@ -123,6 +105,10 @@ async function main() {
       console.log('Tables created successfully from Table.sql.');
     } else {
       console.log('Core tables exist. Ensuring new columns and tables are created...');
+      const checkHangResult = await pool.request().query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'rpHang' AND COLUMN_NAME = 'ID_ToKhai'");
+      if (checkHangResult.recordset.length === 0) {
+        await pool.request().query("ALTER TABLE rpHang ADD ID_ToKhai uniqueidentifier NULL;");
+      }
       
       // Check for Trong_Thong_Ke column on rpToKhai
       const colCheck = await pool.request().query(`
@@ -213,7 +199,7 @@ async function main() {
       
       // Determine stream (Xanh 65%, Vang 30%, Do 5%)
       const randStream = Math.random();
-      const stream = randStream < 0.65 ? 'Xanh' : (randStream < 0.95 ? 'Vàng' : 'Đỏ');
+      const stream = randStream < 0.65 ? 'Xanh' : (randStream < 0.95 ? 'Vang' : 'Do');
 
       // Statistical trade flag (92% in stats, 8% non-statistical)
       const trongThongKe = Math.random() < 0.92 ? 1 : 0;
@@ -232,7 +218,7 @@ async function main() {
       let leadMinutes = 5;
       if (stream === 'Xanh') {
         leadMinutes = 1 + Math.floor(Math.random() * 10); // 1-10 mins
-      } else if (stream === 'Vàng') {
+      } else if (stream === 'VÃ ng') {
         leadMinutes = 15 + Math.floor(Math.random() * 75); // 15-90 mins
       } else {
         leadMinutes = 120 + Math.floor(Math.random() * 360); // 2-8 hours
@@ -252,10 +238,10 @@ async function main() {
       toKhaiRequest.input('Ma_LH', sql.Char(3), regime);
       toKhaiRequest.input('Ma_DN_XNK', sql.VarChar(20), ent.taxId);
       toKhaiRequest.input('Ten_DN_XNK', sql.NVarChar(255), ent.name);
-      toKhaiRequest.input('Luong', sql.NVarChar(4), stream);
+      toKhaiRequest.input('Luong', sql.NVarChar(10), stream);
       toKhaiRequest.input('Loai_XNK', sql.NVarChar(4), loaiXNK);
       toKhaiRequest.input('Nuoc_XNK', sql.NVarChar(50), country.name);
-      toKhaiRequest.input('Dia_diem_giam_sat', sql.NVarChar(20), 'CẢNG HẢI PHÒNG');
+      toKhaiRequest.input('Dia_diem_giam_sat', sql.NVarChar(20), 'Cáº¢NG Háº¢I PHÃ’NG');
       toKhaiRequest.input('So_luong_cont', sql.Int, qtyCont);
       toKhaiRequest.input('Tong_trong_luong_TNE', sql.Numeric(38, 2), weight);
       toKhaiRequest.input('Kim_ngach_USD', sql.Numeric(38, 2), valUSD);
@@ -311,9 +297,9 @@ async function main() {
         // Calculate taxes:
         const thueXNK = isImport ? Math.round(valVND * 0.05) : 0;
         const thueV = isImport ? Math.round((valVND + thueXNK) * 0.10) : 0;
-        const thueT = comm.group === 'Nhiên liệu' ? Math.round(valVND * 0.15) : 0;
-        const thueM = (comm.group === 'Nhiên liệu' || comm.group === 'Hóa chất') ? Math.round(valVND * 0.03) : 0;
-        const thueB = comm.group === 'Kim loại' ? Math.round(valVND * 0.02) : 0;
+        const thueT = comm.group === 'NhiÃªn liá»‡u' ? Math.round(valVND * 0.15) : 0;
+        const thueM = (comm.group === 'NhiÃªn liá»‡u' || comm.group === 'HÃ³a cháº¥t') ? Math.round(valVND * 0.03) : 0;
+        const thueB = comm.group === 'Kim loáº¡i' ? Math.round(valVND * 0.02) : 0;
         const thueG = Math.round(valVND * 0.005);
         const totalTax = thueXNK + thueV + thueT + thueM + thueB + thueG;
 
@@ -323,7 +309,7 @@ async function main() {
         itemRequest.input('ID_ToKhai', sql.UniqueIdentifier, id);
         itemRequest.input('Ngay_dang_ky', sql.Date, dateStr);
         itemRequest.input('Loai_XNK', sql.NChar(4), loaiXNK);
-        itemRequest.input('Nhom_hang', sql.NVarChar(50), comm.name);
+        itemRequest.input('Nhom_hang', sql.NVarChar(255), comm.name);
         itemRequest.input('Ma_HS', sql.VarChar(12), comm.hs);
         itemRequest.input('Ma_nuoc_XX', sql.Char(2), country.code);
         itemRequest.input('So_luong', sql.Numeric(18, 3), qty);
@@ -402,3 +388,9 @@ async function main() {
 }
 
 main();
+
+
+
+
+
+
