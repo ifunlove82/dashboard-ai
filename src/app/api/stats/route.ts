@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDbConnection, sql } from '@/lib/db';
 import { getMockStats } from '@/lib/mockData';
 
+// Helper to calculate the 6-dimension metrics structure
+const buildMetrics = (kpis: any, targets: any, isMock: boolean) => ({
+  revenue: {
+    actual: kpis?.totalTaxVND || 12500000000,
+    target: targets?.targetRevenue || 15000000000,
+    yoy_change: 5.2,
+    mom_change: -1.1,
+    time_avg: 12000000000,
+    peer_avg: 13000000000
+  },
+  declarations: {
+    actual: kpis?.totalDeclarations || 15000,
+    target: targets?.targetDeclarations || 16000,
+    yoy_change: 2.1,
+    mom_change: -0.5,
+    time_avg: 14500,
+    peer_avg: 15200
+  },
+  weight: {
+    actual: kpis?.totalWeightTNE || 350000,
+    target: targets?.targetWeight || 360000,
+    yoy_change: 1.5,
+    mom_change: 0.8,
+    time_avg: 340000,
+    peer_avg: 345000
+  }
+});
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const rawStartDate = searchParams.get('startDate') || '2026-01-01';
@@ -17,7 +45,15 @@ export async function GET(request: NextRequest) {
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   const startDateStr = dateRegex.test(rawStartDate) ? rawStartDate : '2026-01-01';
   const endDateStr = dateRegex.test(rawEndDate) ? rawEndDate : '2026-06-30';
-  const loaiXNK = ['ALL', 'NK', 'XK'].includes(rawLoaiXNK) ? rawLoaiXNK : 'ALL';
+  
+  // Map tradeType to SQL loaiXNK, backward compatible with rawLoaiXNK
+  let loaiXNK = ['ALL', 'NK', 'XK'].includes(rawLoaiXNK) ? rawLoaiXNK : 'ALL';
+  if (tradeType === 'Nhập khẩu') loaiXNK = 'NK';
+  if (tradeType === 'Xuất khẩu') loaiXNK = 'XK';
+
+  const start = new Date(startDateStr);
+  const filterMonth = start.getMonth() + 1;
+  const filterYear = start.getFullYear();
 
   console.log(`Fetching stats for range: ${startDateStr} to ${endDateStr}, type: ${loaiXNK}`);
 
@@ -29,8 +65,11 @@ export async function GET(request: NextRequest) {
     kpiRequest.input('startDate', sql.Date, startDateStr);
     kpiRequest.input('endDate', sql.Date, endDateStr);
     kpiRequest.input('loaiXNK', sql.NVarChar, loaiXNK);
+    kpiRequest.input('unit', sql.NVarChar, unit);
+    kpiRequest.input('filterMonth', sql.Int, filterMonth);
+    kpiRequest.input('filterYear', sql.Int, filterYear);
     
-    const kpiQuery = `
+    let kpiQuery = `
       SELECT 
         COUNT(*) as totalDeclarations,
         SUM(COALESCE(Kim_ngach_USD, 0)) as totalValueUSD,
@@ -38,46 +77,54 @@ export async function GET(request: NextRequest) {
         SUM(COALESCE(Tong_trong_luong_TNE, 0)) as totalWeightTNE,
         SUM(COALESCE(Tong_thue_thu_khac_VND, 0)) as totalOtherTaxVND
       FROM rpToKhai
-      WHERE Ngay_dang_ky BETWEEN @startDate AND @endDate
-        AND (@loaiXNK = 'ALL' OR Loai_XNK = @loaiXNK)
+      WHERE (@loaiXNK = 'ALL' OR Loai_XNK = @loaiXNK)
+        AND (@unit = 'ALL' OR Ma_HQ = @unit)
     `;
+
+    if (timeframe === 'Tháng') {
+      kpiQuery += ` AND MONTH(Ngay_dang_ky) = @filterMonth AND YEAR(Ngay_dang_ky) = @filterYear`;
+    } else if (timeframe === 'Năm') {
+      kpiQuery += ` AND YEAR(Ngay_dang_ky) = @filterYear`;
+    } else {
+      kpiQuery += ` AND Ngay_dang_ky BETWEEN @startDate AND @endDate`;
+    }
+
     const kpiRes = await kpiRequest.query(kpiQuery);
     const kpiRow = kpiRes.recordset[0];
     
-    // Helper to calculate the 6-dimension metrics structure
-    const buildMetrics = (kpis: any, isMock: boolean) => ({
-      revenue: {
-        actual: kpis?.totalTaxVND || 12500000000,
-        target: 15000000000,
-        yoy_change: 5.2,
-        mom_change: -1.1,
-        time_avg: 12000000000,
-        peer_avg: 13000000000
-      },
-      declarations: {
-        actual: kpis?.totalDeclarations || 15000,
-        target: 16000,
-        yoy_change: 2.1,
-        mom_change: -0.5,
-        time_avg: 14500,
-        peer_avg: 15200
-      },
-      weight: {
-        actual: kpis?.totalWeightTNE || 350000,
-        target: 360000,
-        yoy_change: 1.5,
-        mom_change: 0.8,
-        time_avg: 340000,
-        peer_avg: 345000
-      }
-    });
 
+
+    // 1b. Query Targets from rpTargets
+    let targets = null;
+    try {
+      const targetRequest = pool.request();
+      targetRequest.input('unit', sql.NVarChar, unit);
+      targetRequest.input('filterMonth', sql.Int, filterMonth);
+      targetRequest.input('filterYear', sql.Int, filterYear);
+      let targetQuery = `
+        SELECT 
+          SUM(COALESCE(ChiTieu_Thu, 0)) as targetRevenue,
+          SUM(COALESCE(ChiTieu_ToKhai, 0)) as targetDeclarations,
+          SUM(COALESCE(ChiTieu_KimNgach, 0)) as targetWeight
+        FROM rpTargets
+        WHERE (@unit = 'ALL' OR Ma_HQ = @unit)
+          AND Nam = @filterYear
+      `;
+      if (timeframe === 'Tháng') {
+        targetQuery += ` AND Thang = @filterMonth`;
+      }
+      const targetRes = await targetRequest.query(targetQuery);
+      targets = targetRes.recordset[0] || null;
+    } catch (e) {
+      console.warn('Could not query rpTargets, falling back to default targets', e);
+    }
+    
     // If no declarations found in DB, fallback to mock data to keep dashboard active
     if (!kpiRow || kpiRow.totalDeclarations === 0) {
       console.log('No data found in SQL Server, falling back to mock data');
       const mockData = getMockStats(startDateStr, endDateStr, loaiXNK);
       return NextResponse.json(
-        { ...mockData, isMock: true, metrics: buildMetrics(mockData.kpis, true) },
+        { ...mockData, isMock: true, metrics: buildMetrics(mockData.kpis, targets, true) },
         { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
       );
     }
@@ -376,7 +423,7 @@ export async function GET(request: NextRequest) {
           totalDeclarationsInStats: clearance?.totalInStats,
           totalValueUSDInStats: clearance?.inStatsValueUSD,
         },
-        metrics: buildMetrics({ totalTaxVND, totalDeclarations: kpiRow.totalDeclarations, totalWeightTNE: kpiRow.totalWeightTNE }, false),
+        metrics: buildMetrics({ totalTaxVND, totalDeclarations: kpiRow.totalDeclarations, totalWeightTNE: kpiRow.totalWeightTNE }, targets, false),
         taxBreakdown,
         trends,
         channels,
@@ -394,36 +441,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Database connection or query failed. Falling back to Mock Data. Error:', error);
     const mockData = getMockStats(startDateStr, endDateStr, loaiXNK);
-    // Helper to calculate the 6-dimension metrics structure for fallback
-    const buildMetricsFb = (kpis: any) => ({
-      revenue: {
-        actual: kpis?.totalTaxVND || 12500000000,
-        target: 15000000000,
-        yoy_change: 5.2,
-        mom_change: -1.1,
-        time_avg: 12000000000,
-        peer_avg: 13000000000
-      },
-      declarations: {
-        actual: kpis?.totalDeclarations || 15000,
-        target: 16000,
-        yoy_change: 2.1,
-        mom_change: -0.5,
-        time_avg: 14500,
-        peer_avg: 15200
-      },
-      weight: {
-        actual: kpis?.totalWeightTNE || 350000,
-        target: 360000,
-        yoy_change: 1.5,
-        mom_change: 0.8,
-        time_avg: 340000,
-        peer_avg: 345000
-      }
-    });
-
     return NextResponse.json(
-      { ...mockData, isMock: true, metrics: buildMetricsFb(mockData.kpis) },
+      { ...mockData, isMock: true, metrics: buildMetrics(mockData.kpis, null, true) },
       { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } }
     );
   }
