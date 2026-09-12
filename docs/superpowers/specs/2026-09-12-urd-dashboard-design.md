@@ -31,3 +31,11 @@ The Next.js Route Handlers (`src/app/api/*`) will be restructured into a standar
 - **Phase 1: Database & API Hub (Backend):** Update `Table.sql`, generate new MockData/Seed script, and build the `/api/v1/` REST layer.
 - **Phase 2: Frontend Architecture & Foundation:** Setup the Next.js nested layout for the 5 tabs and implement the Global AI Drawer.
 - **Phase 3: Visualizations:** Implement the Data-Dense charts and Flashcards with progressive disclosure on each tab.
+
+## 6. Analytics Engine & Global Filters (Added 2026-09-12)
+- **Database Addition:** Create a `Targets` table (`Ma_HQ`, `Thang`, `Nam`, `ChiTieu_Thu`, `ChiTieu_ToKhai`...) to store budget/target numbers.
+- **API Analytics Engine:** The `/api/stats` endpoint will be upgraded to return 6 dimensions for each metric: `actual`, `target`, `yoy_change`, `mom_change`, `time_avg` (historical average), and `peer_avg` (unit-vs-department average).
+- **Global Filter UI:** A sticky filter bar across all tabs containing:
+  - **Customs Unit (Đơn vị):** Searchable Combobox for `Ma_HQ`.
+  - **Timeframe (Thời gian):** Quick-select buttons (T-1, Tuần, Tháng, Quý, Năm) + Custom Date Range Picker.
+  - **Trade Type (Loại hình):** Segmented Toggle control (Tất cả | Xuất khẩu | Nhập khẩu).

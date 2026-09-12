@@ -55,12 +55,8 @@ interface DashboardContextType {
   setBranch: (b: string) => void;
   loaiXNK: string;
   setLoaiXNK: (l: string) => void;
-  unit: string;
-  setUnit: (u: string) => void;
   timeframe: string;
   setTimeframe: (t: string) => void;
-  tradeType: string;
-  setTradeType: (t: string) => void;
   startDate: string;
   endDate: string;
   refetch: () => Promise<void>;
@@ -87,9 +83,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [loaiXNK, setLoaiXNKState] = useState<string>(searchParams.get("loaiXNK") || "ALL");
   
   // Analytics Engine & Global Filters variables
-  const [unit, setUnitState] = useState<string>(searchParams.get("unit") || "ALL");
   const [timeframe, setTimeframeState] = useState<string>(searchParams.get("timeframe") || "Tháng");
-  const [tradeType, setTradeTypeState] = useState<string>(searchParams.get("tradeType") || "Tất cả");
 
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -137,17 +131,13 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       newPreset: string, 
       newBranch: string, 
       newLoaiXNK: string, 
-      newUnit: string, 
-      newTimeframe: string, 
-      newTradeType: string
+      newTimeframe: string
     ) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("preset", newPreset);
       params.set("branch", newBranch);
       params.set("loaiXNK", newLoaiXNK);
-      params.set("unit", newUnit);
       params.set("timeframe", newTimeframe);
-      params.set("tradeType", newTradeType);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [pathname, router, searchParams]
@@ -155,32 +145,22 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   const setDatePreset = (preset: string) => {
     setDatePresetState(preset);
-    updateQueryParams(preset, branch, loaiXNK, unit, timeframe, tradeType);
+    updateQueryParams(preset, branch, loaiXNK, timeframe);
   };
 
   const setBranch = (b: string) => {
     setBranchState(b);
-    updateQueryParams(datePreset, b, loaiXNK, unit, timeframe, tradeType);
+    updateQueryParams(datePreset, b, loaiXNK, timeframe);
   };
 
   const setLoaiXNK = (l: string) => {
     setLoaiXNKState(l);
-    updateQueryParams(datePreset, branch, l, unit, timeframe, tradeType);
-  };
-
-  const setUnit = (u: string) => {
-    setUnitState(u);
-    updateQueryParams(datePreset, branch, loaiXNK, u, timeframe, tradeType);
+    updateQueryParams(datePreset, branch, l, timeframe);
   };
 
   const setTimeframe = (t: string) => {
     setTimeframeState(t);
-    updateQueryParams(datePreset, branch, loaiXNK, unit, t, tradeType);
-  };
-
-  const setTradeType = (t: string) => {
-    setTradeTypeState(t);
-    updateQueryParams(datePreset, branch, loaiXNK, unit, timeframe, t);
+    updateQueryParams(datePreset, branch, loaiXNK, t);
   };
 
   const fetchData = useCallback(
@@ -191,7 +171,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const res = await fetch(
-          `/api/stats?startDate=${startDate}&endDate=${endDate}&loaiXNK=${loaiXNK}&branch=${branch}&unit=${unit}&timeframe=${timeframe}&tradeType=${tradeType}`
+          `/api/stats?startDate=${startDate}&endDate=${endDate}&loaiXNK=${loaiXNK}&branch=${branch}&timeframe=${timeframe}`
         );
         if (!res.ok) {
           throw new Error(`Máy chủ báo lỗi ${res.status}: ${res.statusText}`);
@@ -208,7 +188,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         setRefreshing(false);
       }
     },
-    [startDate, endDate, loaiXNK, branch, unit, timeframe, tradeType]
+    [startDate, endDate, loaiXNK, branch, timeframe]
   );
 
   useEffect(() => {
@@ -260,12 +240,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       setBranch,
       loaiXNK,
       setLoaiXNK,
-      unit,
-      setUnit,
       timeframe,
       setTimeframe,
-      tradeType,
-      setTradeType,
       startDate,
       endDate,
       refetch: () => fetchData(true),
@@ -286,9 +262,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       datePreset,
       branch,
       loaiXNK,
-      unit,
       timeframe,
-      tradeType,
       startDate,
       endDate,
       fetchData,

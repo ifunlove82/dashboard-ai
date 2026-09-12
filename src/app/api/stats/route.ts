@@ -2,29 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDbConnection, sql } from '@/lib/db';
 import { getMockStats } from '@/lib/mockData';
 
-// Helper to calculate the 6-dimension metrics structure
 const buildMetrics = (kpis: any, targets: any, isMock: boolean) => ({
   revenue: {
     actual: kpis?.totalTaxVND || 12500000000,
     target: targets?.targetRevenue || 15000000000,
-    yoy_change: 5.2,
-    mom_change: -1.1,
+    yoy_change: isMock ? 5.2 : null,
+    mom_change: isMock ? -1.1 : null,
     time_avg: 12000000000,
     peer_avg: 13000000000
   },
   declarations: {
     actual: kpis?.totalDeclarations || 15000,
     target: targets?.targetDeclarations || 16000,
-    yoy_change: 2.1,
-    mom_change: -0.5,
+    yoy_change: isMock ? 2.1 : null,
+    mom_change: isMock ? -0.5 : null,
     time_avg: 14500,
     peer_avg: 15200
   },
   weight: {
     actual: kpis?.totalWeightTNE || 350000,
     target: targets?.targetWeight || 360000,
-    yoy_change: 1.5,
-    mom_change: 0.8,
+    yoy_change: isMock ? 1.5 : null,
+    mom_change: isMock ? 0.8 : null,
     time_avg: 340000,
     peer_avg: 345000
   }
@@ -37,19 +36,16 @@ export async function GET(request: NextRequest) {
   const rawLoaiXNK = searchParams.get('loaiXNK') || 'ALL'; // ALL, NK, XK
   
   // Analytics Engine & Global Filters new params
-  const unit = searchParams.get('unit') || 'ALL';
+  const unit = searchParams.get('branch') || 'ALL'; // Map branch directly to SQL unit
   const timeframe = searchParams.get('timeframe') || 'Tháng';
-  const tradeType = searchParams.get('tradeType') || 'Tất cả';
 
   // Input validation & sanitization (hardening)
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   const startDateStr = dateRegex.test(rawStartDate) ? rawStartDate : '2026-01-01';
   const endDateStr = dateRegex.test(rawEndDate) ? rawEndDate : '2026-06-30';
   
-  // Map tradeType to SQL loaiXNK, backward compatible with rawLoaiXNK
+  // Map rawLoaiXNK to SQL loaiXNK
   let loaiXNK = ['ALL', 'NK', 'XK'].includes(rawLoaiXNK) ? rawLoaiXNK : 'ALL';
-  if (tradeType === 'Nhập khẩu') loaiXNK = 'NK';
-  if (tradeType === 'Xuất khẩu') loaiXNK = 'XK';
 
   const start = new Date(startDateStr);
   const filterMonth = start.getMonth() + 1;
@@ -79,15 +75,8 @@ export async function GET(request: NextRequest) {
       FROM rpToKhai
       WHERE (@loaiXNK = 'ALL' OR Loai_XNK = @loaiXNK)
         AND (@unit = 'ALL' OR Ma_HQ = @unit)
+        AND Ngay_dang_ky BETWEEN @startDate AND @endDate
     `;
-
-    if (timeframe === 'Tháng') {
-      kpiQuery += ` AND MONTH(Ngay_dang_ky) = @filterMonth AND YEAR(Ngay_dang_ky) = @filterYear`;
-    } else if (timeframe === 'Năm') {
-      kpiQuery += ` AND YEAR(Ngay_dang_ky) = @filterYear`;
-    } else {
-      kpiQuery += ` AND Ngay_dang_ky BETWEEN @startDate AND @endDate`;
-    }
 
     const kpiRes = await kpiRequest.query(kpiQuery);
     const kpiRow = kpiRes.recordset[0];
@@ -110,9 +99,6 @@ export async function GET(request: NextRequest) {
         WHERE (@unit = 'ALL' OR Ma_HQ = @unit)
           AND Nam = @filterYear
       `;
-      if (timeframe === 'Tháng') {
-        targetQuery += ` AND Thang = @filterMonth`;
-      }
       const targetRes = await targetRequest.query(targetQuery);
       targets = targetRes.recordset[0] || null;
     } catch (e) {
