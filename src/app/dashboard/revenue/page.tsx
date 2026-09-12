@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { RevenueKPIs } from "@/components/dashboard/RevenueKPIs";
 import { RevenueChartsRow1 } from "@/components/dashboard/RevenueChartsRow1";
+import { RevenueChartsRow2 } from "@/components/dashboard/RevenueChartsRow2";
 
 export default function RevenuePage() {
   const searchParams = useSearchParams();
@@ -89,6 +90,7 @@ export default function RevenuePage() {
       {!enterprise && (
         <>
           <RevenueChartsRow1 charts={data.charts} />
+          <RevenueChartsRow2 charts={data.charts} />
         </>
       )}
       {/* Phải chừa không gian cho Charts và Tables */}
