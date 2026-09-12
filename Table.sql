@@ -67,6 +67,11 @@ CREATE TABLE [dbo].[rpToKhai](
 	[Tong_trong_luong_TNE] [numeric](38, 2) NULL,
 	[Kim_ngach_USD] [numeric](38, 2) NULL,
 	[Tong_thue_thu_khac_VND] [numeric](38, 2) NULL,
+	[Trong_Thong_Ke] [bit] NULL,
+	[Thoi_diem_dang_ky] [datetime] NULL,
+	[Thoi_diem_phan_luong] [datetime] NULL,
+	[Thoi_diem_thong_quan] [datetime] NULL,
+	[Ma_Cong_Chuc] [varchar](50) NULL,
  CONSTRAINT [PK_rpToKhai] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC,
@@ -79,6 +84,53 @@ GO
 SET ANSI_PADDING OFF
 GO
 
+/****** Object:  Table [dbo].[rpPhiCSHT] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[rpPhiCSHT](
+	[ID] [uniqueidentifier] NOT NULL,
+	[Ngay_dang_ky] [date] NOT NULL,
+	[So_tien] [numeric](38, 2) NULL,
+	[Ma_HQ] [char](4) NULL,
+	[Loai_XNK] [nvarchar](4) NULL,
+	[Ma_DN_XNK] [varchar](20) NULL,
+	[Loai_hang] [nvarchar](50) NULL,
+ CONSTRAINT [PK_rpPhiCSHT] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC,
+	[Ngay_dang_ky] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+)
+GO
+
+/****** Object:  Table [dbo].[rpHieuSuatCongChuc] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[rpHieuSuatCongChuc](
+	[ID] [uniqueidentifier] NOT NULL,
+	[Ma_Cong_Chuc] [varchar](50) NOT NULL,
+	[Ngay] [date] NOT NULL,
+	[To_khai_xanh] [int] NULL,
+	[To_khai_vang] [int] NULL,
+	[To_khai_do] [int] NULL,
+	[Vi_pham] [int] NULL,
+	[Thoi_gian_xu_ly_tb_phut] [numeric](10, 2) NULL,
+ CONSTRAINT [PK_rpHieuSuatCongChuc] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC,
+	[Ngay] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
+)
+GO
+
 ALTER TABLE [dbo].[rpHang] ADD  CONSTRAINT [DF_rpHang_ID]  DEFAULT (newsequentialid()) FOR [ID]
 GO
 
@@ -87,4 +139,14 @@ GO
 
 ALTER TABLE [dbo].[rpToKhai] ADD  CONSTRAINT [DF_rpToKhai_ID]  DEFAULT (newsequentialid()) FOR [ID]
 GO
+
+ALTER TABLE [dbo].[rpToKhai] ADD  CONSTRAINT [DF_rpToKhai_Trong_Thong_Ke]  DEFAULT ((1)) FOR [Trong_Thong_Ke]
+GO
+
+ALTER TABLE [dbo].[rpPhiCSHT] ADD  CONSTRAINT [DF_rpPhiCSHT_ID]  DEFAULT (newsequentialid()) FOR [ID]
+GO
+
+ALTER TABLE [dbo].[rpHieuSuatCongChuc] ADD  CONSTRAINT [DF_rpHieuSuatCongChuc_ID]  DEFAULT (newsequentialid()) FOR [ID]
+GO
+
 
