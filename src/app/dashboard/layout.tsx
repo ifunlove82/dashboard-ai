@@ -15,6 +15,7 @@ import {
 import AIDrawer from "@/components/AIDrawer";
 import { DashboardProvider } from "@/context/DashboardContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { ShortcutsModal } from "@/components/dashboard/ShortcutsModal";
 
 interface NavItem {
@@ -177,6 +178,9 @@ function DashboardLayoutContent({
 
         {/* Executive Filter Header */}
         <DashboardHeader />
+        
+        {/* Global Filter Bar (Task 3) */}
+        <GlobalFilterBar />
 
         {/* Dynamic Route Content */}
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto max-w-[1600px] w-full mx-auto">
