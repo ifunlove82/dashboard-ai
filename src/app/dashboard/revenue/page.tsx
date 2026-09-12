@@ -5,6 +5,8 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { RevenueKPIs } from "@/components/dashboard/RevenueKPIs";
 import { RevenueChartsRow1 } from "@/components/dashboard/RevenueChartsRow1";
 import { RevenueChartsRow2 } from "@/components/dashboard/RevenueChartsRow2";
+import { RevenueTopLists } from "@/components/dashboard/RevenueTopLists";
+import { RevenueDeclarationTable } from "@/components/dashboard/RevenueDeclarationTable";
 
 export default function RevenuePage() {
   const searchParams = useSearchParams();
@@ -87,13 +89,15 @@ export default function RevenuePage() {
         )}
       </div>
       <RevenueKPIs kpis={data.kpis} />
-      {!enterprise && (
+      {!enterprise ? (
         <>
           <RevenueChartsRow1 charts={data.charts} />
           <RevenueChartsRow2 charts={data.charts} />
+          <RevenueTopLists tops={data.tops} />
         </>
+      ) : (
+        <RevenueDeclarationTable declarations={data.declarations} />
       )}
-      {/* Phải chừa không gian cho Charts và Tables */}
     </div>
   );
 }
