@@ -12,6 +12,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import AIDrawer from "@/components/AIDrawer";
+
 interface NavItem {
   name: string;
   href: string;
@@ -61,6 +63,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-100/70 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased">
+      <AIDrawer />
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/95 p-5 flex flex-col justify-between shrink-0 hidden md:flex sticky top-0 h-screen">
         <div className="space-y-6">
