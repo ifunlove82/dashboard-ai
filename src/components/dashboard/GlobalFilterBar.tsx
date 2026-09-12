@@ -3,6 +3,14 @@
 import React from "react";
 import { useDashboard, BRANCH_OPTIONS } from "@/context/DashboardContext";
 import { Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function GlobalFilterBar() {
   const { unit, setUnit, timeframe, setTimeframe, tradeType, setTradeType } = useDashboard();
@@ -13,57 +21,61 @@ export function GlobalFilterBar() {
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 flex flex-wrap items-center gap-4 text-sm z-20 sticky top-[60px] md:top-0">
       
-      {/* Unit Select */}
+      {/* Unit Select using shadcn/ui */}
       <div className="flex items-center gap-2">
         <label htmlFor="global-unit-select" className="sr-only">Đơn vị Hải quan</label>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors">
-          <Building2 className="w-4 h-4 text-slate-500" />
-          <select
-            id="global-unit-select"
-            value={unit}
-            onChange={(e) => setUnit(e.target.value)}
-            className="bg-transparent border-none outline-none font-medium cursor-pointer text-sm focus:ring-0"
-          >
-            {BRANCH_OPTIONS.map((opt) => (
-              <option key={opt.code} value={opt.code}>
-                {opt.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-1.5 px-1 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 transition-colors">
+          <Building2 className="ml-2 w-4 h-4 text-slate-500 shrink-0" />
+          <Select value={unit} onValueChange={(val) => setUnit(val || "")}>
+            <SelectTrigger className="border-none bg-transparent shadow-none h-7 focus:ring-0">
+              <SelectValue placeholder="Chọn Đơn vị Hải quan" />
+            </SelectTrigger>
+            <SelectContent>
+              {BRANCH_OPTIONS.map((opt) => (
+                <SelectItem key={opt.code} value={opt.code}>
+                  {opt.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Timeframe Buttons */}
+      {/* Timeframe Buttons using shadcn/ui */}
       <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
         {timeframes.map((tf) => (
-          <button
+          <Button
             key={tf}
+            variant={timeframe === tf ? "default" : "ghost"}
+            size="sm"
             onClick={() => setTimeframe(tf)}
-            className={`px-3 py-1 rounded-md font-medium transition-colors ${
+            className={`h-7 px-3 text-xs ${
               timeframe === tf
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm hover:bg-white hover:text-blue-600 dark:hover:bg-slate-700 dark:hover:text-blue-400"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             {tf}
-          </button>
+          </Button>
         ))}
       </div>
 
-      {/* Trade Type Segmented Control */}
+      {/* Trade Type Segmented Control using shadcn/ui */}
       <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
         {tradeTypes.map((tt) => (
-          <button
+          <Button
             key={tt}
+            variant={tradeType === tt ? "default" : "ghost"}
+            size="sm"
             onClick={() => setTradeType(tt)}
-            className={`px-3 py-1 rounded-md font-medium transition-colors ${
+            className={`h-7 px-3 text-xs ${
               tradeType === tt
-                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm hover:bg-white hover:text-blue-600 dark:hover:bg-slate-700 dark:hover:text-blue-400"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             {tt}
-          </button>
+          </Button>
         ))}
       </div>
 
