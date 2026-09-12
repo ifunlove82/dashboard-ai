@@ -20,17 +20,11 @@ import {
   BarChart,
 } from "recharts";
 import {
-  FileText,
-  DollarSign,
-  Award,
-  Anchor,
-  TrendingUp,
   ArrowRight,
   Boxes,
   Building2,
-  CheckCircle2,
-  AlertTriangle,
 } from "lucide-react";
+import { OverviewFlashcards } from "@/components/dashboard/OverviewFlashcards";
 
 export default function OverviewPage() {
   const { data, loading, refreshing } = useDashboard();
@@ -51,8 +45,6 @@ export default function OverviewPage() {
   const topEnterprises = (data?.topEnterprises || data?.enterprises || []).slice(0, 5);
 
   const totalDeclarations = kpis?.totalDeclarations || 0;
-  const greenDeclarations = channels.find((c) => c.name.includes("Xanh"))?.value || 0;
-  const greenPct = totalDeclarations > 0 ? ((greenDeclarations / totalDeclarations) * 100).toFixed(1) : "0";
 
   return (
     <div className="space-y-6">
@@ -75,99 +67,7 @@ export default function OverviewPage() {
       </div>
 
       {/* 1. Flashcards (KPI Grid) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Declarations */}
-        <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-2xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Tổng số tờ khai
-            </span>
-            <div className="size-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center">
-              <FileText className="size-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3.5 pt-0">
-            <div className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
-              {formatNumber(totalDeclarations)}
-            </div>
-            <div className="flex items-center justify-between mt-1 text-[11px]">
-              <span className="text-slate-500">Tỷ lệ thông quan ngay:</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{greenPct}%</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total USD Value */}
-        <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-2xs hover:border-sky-400 dark:hover:border-sky-600 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Kim ngạch XNK
-            </span>
-            <div className="size-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center">
-              <DollarSign className="size-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3.5 pt-0">
-            <div className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
-              {formatUSD(kpis?.totalValueUSD || 0)}
-            </div>
-            <div className="flex items-center justify-between mt-1 text-[11px]">
-              <span className="text-slate-500">Quy đổi:</span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {kpis?.totalValueUSD ? `${((kpis.totalValueUSD * 25000) / 1e12).toFixed(1)} nghìn tỷ đ` : "0 đ"}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tax Revenue */}
-        <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-2xs hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Thuế Hải quan đã thu
-            </span>
-            <div className="size-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center">
-              <Award className="size-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3.5 pt-0">
-            <div className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
-              {formatVND(kpis?.totalTaxVND || 0)}
-            </div>
-            <div className="flex items-center justify-between mt-1 text-[11px]">
-              <span className="text-slate-500">Tỷ lệ động viên:</span>
-              <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                {kpis?.totalTaxVND && kpis?.totalValueUSD
-                  ? `${((kpis.totalTaxVND / (kpis.totalValueUSD * 25000)) * 100).toFixed(2)}%`
-                  : "0%"}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Seaport Infrastructure Fee */}
-        <Card className="border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 shadow-2xs hover:border-teal-400 dark:hover:border-teal-600 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3.5 px-4">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Phí CSHT Cảng biển
-            </span>
-            <div className="size-7 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-600 flex items-center justify-center">
-              <Anchor className="size-3.5" />
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-3.5 pt-0">
-            <div className="text-2xl font-extrabold tracking-tight tabular-nums text-slate-900 dark:text-white">
-              {formatVND(kpis?.totalPhiCSHTVND || data?.phiCSHT?.totalFeeVND || 0)}
-            </div>
-            <div className="flex items-center justify-between mt-1 text-[11px]">
-              <span className="text-slate-500">Đạt chỉ tiêu:</span>
-              <span className="font-bold text-teal-600 dark:text-teal-400">
-                {data?.phiCSHT?.completionRate || 93.3}%
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <OverviewFlashcards />
 
       {/* 2. Main Macro Charts: Trend & Clearance Channels */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
