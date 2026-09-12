@@ -8,30 +8,91 @@ import { Progress } from "@/components/ui/progress";
 import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
 import { formatNumber } from "@/context/DashboardContext";
 import { ArrowUpRight, ArrowDownRight, Landmark, Building2, Anchor, FileText, DollarSign, Boxes } from "lucide-react";
+import type { OverviewData } from "@/app/api/stats/overview/route";
+
+interface CardConfig {
+  id: string;
+  href: string;
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  actualStr: string;
+  actualUnit: string;
+  targetPct?: number;
+  targetLabel?: string;
+  targetValue?: string;
+  yoy: number;
+  sparkline?: number[];
+  sparkLabel: string;
+}
 
 export function OverviewFlashcards() {
   const searchParams = useSearchParams();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const branch = searchParams.get("branch") || "ALL";
+  const loaiXNK = searchParams.get("loaiXNK") || "ALL";
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function fetchData() {
-      const branch = searchParams.get("branch") || "ALL";
-      const loaiXNK = searchParams.get("loaiXNK") || "ALL";
+      setLoading(true);
+      setError(null);
       try {
-        const res = await fetch(`/api/stats/overview?branch=${branch}&loaiXNK=${loaiXNK}`);
-        const json = await res.json();
+        const res = await fetch(`/api/stats/overview?branch=${branch}&loaiXNK=${loaiXNK}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: Lỗi khi tải dữ liệu thẻ tổng quan`);
+        }
+        const json = (await res.json()) as OverviewData;
         setData(json);
-      } catch (e) {
-        console.error(e);
+      } catch (e: any) {
+        if (e.name !== "AbortError") {
+          console.error(e);
+          setError(e.message || "Đã xảy ra lỗi khi tải dữ liệu thẻ tổng quan");
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
-    fetchData();
-  }, [searchParams]);
 
-  if (loading || !data) return <div className="h-40 flex items-center justify-center">Đang tải thẻ tổng quan...</div>;
+    fetchData();
+
+    return () => {
+      controller.abort();
+    };
+  }, [branch, loaiXNK, retryCount]);
+
+  if (loading) {
+    return (
+      <div className="h-40 flex items-center justify-center text-slate-500">
+        Đang tải thẻ tổng quan...
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="h-40 flex flex-col items-center justify-center text-rose-500 gap-2 border border-rose-200 dark:border-rose-900/50 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 p-4 mb-6">
+        <p className="text-sm font-medium">Không thể tải dữ liệu thẻ tổng quan</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{error || "Không có dữ liệu"}</p>
+        <button
+          type="button"
+          onClick={() => setRetryCount((c) => c + 1)}
+          className="mt-2 text-xs px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
@@ -46,6 +107,7 @@ export function OverviewFlashcards() {
   };
 
   const renderAreaChart = (arr: number[], id: string) => {
+    if (!arr || arr.length === 0) return null;
     const chartData = arr.map((v, i) => ({ name: `T${i + 1}`, value: v }));
     return (
       <div className="h-16 w-full mt-2">
@@ -67,7 +129,10 @@ export function OverviewFlashcards() {
 
   const renderCard = ({
     id, href, title, subtitle, icon: Icon, actualStr, actualUnit, targetPct, targetLabel, targetValue, yoy, sparkline, sparkLabel
-  }: any) => {
+  }: CardConfig) => {
+    const hasSparkline = Array.isArray(sparkline) && sparkline.length > 0;
+    const latestSpark = hasSparkline ? sparkline[sparkline.length - 1] : null;
+
     return (
       <Link href={href}>
         <Card className="hover:border-blue-500 transition-colors cursor-pointer shadow-sm overflow-hidden h-full flex flex-col justify-between">
@@ -110,9 +175,9 @@ export function OverviewFlashcards() {
           <div className="pt-2">
             <div className="px-4 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span>{sparkLabel}</span>
-              {sparkline && <span className="font-semibold text-blue-600 dark:text-blue-400">Tháng mới nhất: {sparkline[sparkline.length - 1]}</span>}
+              {latestSpark !== null && <span className="font-semibold text-blue-600 dark:text-blue-400">Tháng mới nhất: {latestSpark}</span>}
             </div>
-            {sparkline && renderAreaChart(sparkline, id)}
+            {hasSparkline && renderAreaChart(sparkline!, id)}
           </div>
         </Card>
       </Link>
