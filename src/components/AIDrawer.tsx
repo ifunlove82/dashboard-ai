@@ -1,16 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { Bot, X, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function AIDrawer() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [insight, setInsight] = useState<string | null>(null);
+  
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchInsight = async () => {
+  const fetchInsight = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       setIsLoading(true);
       setInsight(null);
@@ -23,7 +32,10 @@ export default function AIDrawer() {
       }
 
       // Fetch data for the current route
-      const res = await fetch(dataUrl);
+      const res = await fetch(dataUrl, { signal: controller.signal });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch data: ${res.status}`);
+      }
       const json = await res.json();
       
       const payloadData = json.data ? json.data : json;
@@ -36,26 +48,47 @@ export default function AIDrawer() {
           ...payloadData,
           context: pathname,
         }),
+        signal: controller.signal
       });
+
+      if (!aiRes.ok) {
+        throw new Error(`Failed to fetch AI insight: ${aiRes.status}`);
+      }
 
       const aiJson = await aiRes.json();
       setInsight(aiJson.insight || aiJson.error || "No insight available.");
     } catch (error: any) {
+      if (error.name === "AbortError") {
+        return;
+      }
       setInsight("Failed to fetch insight: " + error.message);
     } finally {
-      setIsLoading(false);
+      if (abortControllerRef.current === controller) {
+        setIsLoading(false);
+      }
     }
-  };
-
-  // Reset insight when route changes so it forces a new fetch when opened
-  useEffect(() => {
-    setInsight(null);
   }, [pathname]);
 
   useEffect(() => {
-    if (isOpen && !insight && !isLoading) {
+    if (isOpen) {
       fetchInsight();
+    } else {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     }
+  }, [isOpen, fetchInsight]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen]);
 
   return (
@@ -79,6 +112,8 @@ export default function AIDrawer() {
 
       {/* Drawer */}
       <div
+        role="dialog"
+        aria-modal="true"
         className={`fixed top-0 right-0 h-full w-[400px] max-w-full bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
@@ -91,6 +126,7 @@ export default function AIDrawer() {
           </div>
           <button 
             onClick={() => setIsOpen(false)}
+            aria-label="Close drawer"
             className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -106,8 +142,7 @@ export default function AIDrawer() {
             </div>
           ) : insight ? (
             <div className="prose prose-sm dark:prose-invert max-w-none">
-              {/* Very basic markdown rendering using pre-wrap to preserve formatting */}
-              <div className="whitespace-pre-wrap">{insight}</div>
+              <ReactMarkdown>{insight}</ReactMarkdown>
             </div>
           ) : (
             <div className="text-center text-slate-500 mt-10">
