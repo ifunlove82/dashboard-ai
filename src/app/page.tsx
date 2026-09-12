@@ -625,7 +625,7 @@ export default function CustomsDashboard() {
         <div className="space-y-6">
           {/* Logo & Operational Title */}
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div className="size-9 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+            <div className="size-9 rounded-xl bg-blue-700 dark:bg-blue-600 text-white flex items-center justify-center shadow-xs">
               <ShieldCheck className="size-5" />
             </div>
             <div>

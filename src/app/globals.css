@@ -156,6 +156,31 @@
   background: rgba(148, 163, 184, 0.6);
 }
 
+/* Themed Browser Surfaces: Selection, Caret & Focus Rings */
+::selection {
+  background: rgba(37, 99, 235, 0.2);
+  color: inherit;
+}
+.dark ::selection {
+  background: rgba(59, 130, 246, 0.35);
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.dark :focus-visible {
+  outline-color: #3b82f6;
+}
+
+input, textarea {
+  caret-color: #2563eb;
+}
+.dark input, .dark textarea {
+  caret-color: #60a5fa;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
