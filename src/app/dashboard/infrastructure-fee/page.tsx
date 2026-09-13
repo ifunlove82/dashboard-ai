@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { InfrastructureKPIs } from "@/components/dashboard/InfrastructureKPIs";
+import { InfrastructureChartsRow1 } from "@/components/dashboard/InfrastructureChartsRow1";
 import type {
   KpiItem,
   Last6PeriodsChartItem,
@@ -86,6 +87,18 @@ export default function InfrastructureFeePage() {
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
+  const handleDrill = (taxTypeValue: string) => {
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    if (params.get("taxType") === taxTypeValue) {
+      params.delete("taxType");
+    } else {
+      params.set("taxType", taxTypeValue);
+    }
+    params.delete("enterprise");
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
+
   if (loading && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[350px] gap-3">
@@ -110,6 +123,15 @@ export default function InfrastructureFeePage() {
 
       {/* 6-Card KPI Grid with Sparklines */}
       <InfrastructureKPIs kpis={data?.kpis || []} />
+
+      {/* Main Charts (Row 1 - Xu hướng & Luồng) */}
+      {!enterprise && data?.charts && (
+        <InfrastructureChartsRow1
+          charts={data.charts}
+          onDrill={handleDrill}
+          selectedTaxType={taxType}
+        />
+      )}
     </div>
   );
 }
