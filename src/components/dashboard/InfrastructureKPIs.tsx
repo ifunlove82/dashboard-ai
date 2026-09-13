@@ -43,14 +43,17 @@ export function InfrastructureKPIs({ kpis }: InfrastructureKPIsProps) {
     return null;
   }
 
+  // Chia 50/50 nếu có 2 KPI
+  const gridClass = kpis.length === 2 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+    <div className={`grid ${gridClass} gap-4 mb-6`}>
       {kpis.map((item) => {
         const isPositive = item.changeType === "positive";
         const isNegative = item.changeType === "negative";
         const stroke = item.strokeColor || "#3b82f6";
         const Icon = getIcon(item.id);
-        const hasSparkline = (item.id === "ytd" || item.id === "current_period") && item.sparklineData && item.sparklineData.length > 0;
+        const hasSparkline = item.id === "ytd" && item.sparklineData && item.sparklineData.length > 0;
         const latestSpark = hasSparkline ? item.sparklineData[item.sparklineData.length - 1].value : null;
 
         return (
@@ -103,9 +106,16 @@ export function InfrastructureKPIs({ kpis }: InfrastructureKPIsProps) {
                 <>
                   <Progress value={item.progress} className="h-2 mb-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-600" />
                   <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-4">
-                    <span>Đạt {item.progress}% kế hoạch</span>
+                    <span>Đạt {item.progress}% kế hoạch năm</span>
+                    {item.targetValue && <span className="font-medium text-slate-700 dark:text-slate-300">Chỉ tiêu: {item.targetValue}</span>}
                   </div>
                 </>
+              )}
+
+              {item.previousValue !== undefined && (
+                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-4 mt-2">
+                  <span>Kỳ trước (T09): {item.previousValue}</span>
+                </div>
               )}
             </div>
 

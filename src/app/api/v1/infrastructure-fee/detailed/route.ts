@@ -16,6 +16,8 @@ export interface KpiItem {
   sparklineData: SparklinePoint[];
   progress?: number;
   strokeColor?: string;
+  previousValue?: string;
+  targetValue?: string;
 }
 
 export interface Last6PeriodsChartItem {
@@ -104,17 +106,18 @@ export async function GET(request: NextRequest) {
     {
       id: "current_period",
       title: "THU KỲ BÁO CÁO (T10)",
-      value: roundTo(1245.8 * multiplier, 1),
-      formattedValue: `${roundTo(1245.8 * multiplier, 1).toLocaleString("vi-VN")} Tỷ`,
+      value: roundTo(1185.5 * multiplier, 1),
+      formattedValue: `${roundTo(1185.5 * multiplier, 1).toLocaleString("vi-VN")}`,
       unit: "Tỷ VNĐ",
-      change: "+8.2%",
+      change: "+3.4%",
       changeType: "positive",
-      note: "Tăng 8.2% so với kỳ trước",
+      note: "Thực thu tháng 10",
+      previousValue: `${roundTo(1150.2 * multiplier, 1).toLocaleString("vi-VN")} Tỷ VNĐ`,
       sparklineData: [
-        { value: 42 },
-        { value: 48 },
         { value: 45 },
-        { value: 54 },
+        { value: 52 },
+        { value: 48 },
+        { value: 61 },
         { value: 50 },
         { value: 62 },
         { value: 68 }
@@ -123,13 +126,15 @@ export async function GET(request: NextRequest) {
     },
     {
       id: "ytd",
-      title: "THU PHÍ YTD 2024",
+      title: "LŨY KẾ 2024",
       value: roundTo(12850.5 * multiplier, 1),
-      formattedValue: `${roundTo(12850.5 * multiplier, 1).toLocaleString("vi-VN")} Tỷ`,
+      formattedValue: `${roundTo(12850.5 * multiplier, 1).toLocaleString("vi-VN")}`,
       unit: "Tỷ VNĐ",
       change: "+14.6%",
       changeType: "positive",
       note: "Lũy kế từ đầu năm",
+      progress: 88.6,
+      targetValue: `${roundTo(14500.0 * multiplier, 1).toLocaleString("vi-VN")} Tỷ VNĐ`,
       sparklineData: [
         { value: 30 },
         { value: 45 },
@@ -140,87 +145,6 @@ export async function GET(request: NextRequest) {
         { value: 128 }
       ],
       strokeColor: "#1d4ed8"
-    },
-    {
-      id: "yoy",
-      title: "TĂNG TRƯỞNG YOY",
-      value: 14.6,
-      formattedValue: "+14.6%",
-      unit: "%",
-      change: "+2.3%",
-      changeType: "positive",
-      note: "So với cùng kỳ 2023",
-      sparklineData: [
-        { value: 8 },
-        { value: 10 },
-        { value: 9 },
-        { value: 12 },
-        { value: 11 },
-        { value: 13 },
-        { value: 14.6 }
-      ],
-      strokeColor: "#f59e0b"
-    },
-    {
-      id: "previous_period",
-      title: "THU KỲ TRƯỚC (T09)",
-      value: roundTo(1150.2 * multiplier, 1),
-      formattedValue: `${roundTo(1150.2 * multiplier, 1).toLocaleString("vi-VN")} Tỷ`,
-      unit: "Tỷ VNĐ",
-      change: "-3.1%",
-      changeType: "negative",
-      note: "Thực thu tháng 9",
-      sparklineData: [
-        { value: 58 },
-        { value: 54 },
-        { value: 52 },
-        { value: 50 },
-        { value: 49 },
-        { value: 47 },
-        { value: 45 }
-      ],
-      strokeColor: "#64748b"
-    },
-    {
-      id: "target",
-      title: "KẾ HOẠCH NĂM 2024",
-      value: roundTo(14500.0 * multiplier, 1),
-      formattedValue: `${roundTo(14500.0 * multiplier, 1).toLocaleString("vi-VN")} Tỷ`,
-      unit: "Tỷ VNĐ",
-      change: "100%",
-      changeType: "neutral",
-      note: "Chỉ tiêu được giao",
-      sparklineData: [
-        { value: 100 },
-        { value: 100 },
-        { value: 100 },
-        { value: 100 },
-        { value: 100 },
-        { value: 100 },
-        { value: 100 }
-      ],
-      strokeColor: "#0ea5e9"
-    },
-    {
-      id: "completion",
-      title: "% HOÀN THÀNH KH",
-      value: 88.6,
-      formattedValue: "88.6%",
-      unit: "%",
-      progress: 88.6,
-      change: "+4.2%",
-      changeType: "positive",
-      note: `Còn thiếu ${roundTo(1649.5 * multiplier, 1).toLocaleString("vi-VN")} Tỷ`,
-      sparklineData: [
-        { value: 25 },
-        { value: 38 },
-        { value: 51 },
-        { value: 64 },
-        { value: 73 },
-        { value: 81 },
-        { value: 88.6 }
-      ],
-      strokeColor: "#10b981"
     }
   ];
 
