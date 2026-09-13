@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ResponsiveContainer, LineChart, Line } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis } from "recharts";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { KpiItem } from "@/app/api/v1/infrastructure-fee/detailed/route";
 
@@ -70,27 +70,39 @@ export function InfrastructureKPIs({ kpis }: InfrastructureKPIsProps) {
             </div>
 
             {/* Sparkline chart placed subtly under metric */}
-            <div className="h-10 w-full min-h-[40px] mt-2 relative overflow-hidden">
-              {mounted ? (
-                <ResponsiveContainer width="100%" height={40}>
-                  <LineChart
-                    data={item.sparklineData || []}
-                    margin={{ top: 2, right: 2, bottom: 2, left: 2 }}
-                  >
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke={stroke}
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full w-full bg-slate-50 dark:bg-slate-800/40 rounded animate-pulse" />
-              )}
-            </div>
+            {(item.id === "ytd" || item.id === "current_period") && item.sparklineData && item.sparklineData.length > 0 && (
+              <div className="pt-2">
+                <div className="h-14 w-full mt-2 relative overflow-hidden">
+                  {mounted ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={item.sparklineData.map((d, i) => ({ name: `T${i + 1}`, value: d.value }))}
+                        margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id={`colorBlue-${item.id}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={stroke} stopOpacity={0.2} />
+                            <stop offset="95%" stopColor={stroke} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} dy={5} />
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke={stroke}
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill={`url(#colorBlue-${item.id})`}
+                          isAnimationActive={false}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full w-full bg-slate-50 dark:bg-slate-800/40 rounded animate-pulse" />
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Footnote / Context note */}
             {item.note && (
