@@ -4,12 +4,33 @@ import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ResponsiveContainer, AreaChart, Area, XAxis } from "recharts";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Minus,
+  Activity,
+  Landmark,
+  FileText,
+  Target,
+  PieChart
+} from "lucide-react";
 import type { KpiItem } from "@/app/api/v1/infrastructure-fee/detailed/route";
 
 interface InfrastructureKPIsProps {
   kpis: KpiItem[];
 }
+
+const getIcon = (id: string) => {
+  switch (id) {
+    case "current_period": return Activity;
+    case "ytd": return Landmark;
+    case "yoy": return TrendingUp;
+    case "previous_period": return FileText;
+    case "target": return Target;
+    case "completion": return PieChart;
+    default: return Activity;
+  }
+};
 
 export function InfrastructureKPIs({ kpis }: InfrastructureKPIsProps) {
   const [mounted, setMounted] = useState(false);
@@ -23,55 +44,78 @@ export function InfrastructureKPIs({ kpis }: InfrastructureKPIsProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
       {kpis.map((item) => {
         const isPositive = item.changeType === "positive";
         const isNegative = item.changeType === "negative";
         const stroke = item.strokeColor || "#3b82f6";
+        const Icon = getIcon(item.id);
+        const hasSparkline = (item.id === "ytd" || item.id === "current_period") && item.sparklineData && item.sparklineData.length > 0;
+        const latestSpark = hasSparkline ? item.sparklineData[item.sparklineData.length - 1].value : null;
 
         return (
           <Card
             key={item.id}
-            className="p-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl shadow-xs hover:shadow-sm transition-all flex flex-col justify-between"
+            className="hover:border-blue-500 transition-colors cursor-pointer shadow-sm overflow-hidden h-full flex flex-col justify-between bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl"
           >
-            {/* Top header: Title & Change badge */}
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider line-clamp-1">
-                {item.title}
-              </span>
-              {item.change && (
-                <div
-                  className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${
-                    isPositive
-                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60"
-                      : isNegative
-                      ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200/70 dark:border-rose-800/60"
-                      : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700/60"
-                  }`}
-                >
-                  {isPositive && <TrendingUp className="size-3" />}
-                  {isNegative && <TrendingDown className="size-3" />}
-                  {!isPositive && !isNegative && <Minus className="size-3" />}
-                  <span>{item.change}</span>
+            <div className="p-4 pb-0">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="size-9 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Icon className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm text-slate-800 dark:text-slate-200">{item.title}</h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{item.note || "Thống kê"}</p>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {/* Metric Value */}
-            <div className="my-1">
-              <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                {item.formattedValue}
+                {item.change && (
+                  <div
+                    className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${
+                      isPositive
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+                        : isNegative
+                        ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                  >
+                    {isPositive ? <TrendingUp className="size-3" /> : isNegative ? <TrendingDown className="size-3" /> : <Minus className="size-3" />}
+                    <span>{item.change}</span>
+                  </div>
+                )}
               </div>
-              {item.progress !== undefined && (
-                <div className="mt-2 space-y-1">
-                  <Progress value={item.progress} className="h-1.5 bg-slate-100 dark:bg-slate-800" />
+
+              {/* Main Number & Progress */}
+              <div className="flex items-end justify-between mb-2 mt-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                    {item.formattedValue}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{item.unit}</span>
                 </div>
+                {item.progress !== undefined && (
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{item.progress}% hoàn thành</span>
+                )}
+              </div>
+
+              {item.progress !== undefined && (
+                <>
+                  <Progress value={item.progress} className="h-2 mb-2 bg-slate-100 dark:bg-slate-800 [&>div]:bg-blue-600" />
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+                    <span>Đạt {item.progress}% kế hoạch</span>
+                  </div>
+                </>
               )}
             </div>
 
-            {/* Sparkline chart placed subtly under metric */}
-            {(item.id === "ytd" || item.id === "current_period") && item.sparklineData && item.sparklineData.length > 0 && (
+            {/* Sparkline Section */}
+            {hasSparkline ? (
               <div className="pt-2">
+                <div className="px-4 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>Biến động (12 kỳ)</span>
+                  {latestSpark !== null && <span className="font-semibold text-blue-600 dark:text-blue-400">Kỳ mới nhất: {latestSpark}</span>}
+                </div>
                 <div className="h-14 w-full mt-2 relative overflow-hidden">
                   {mounted ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -102,16 +146,8 @@ export function InfrastructureKPIs({ kpis }: InfrastructureKPIsProps) {
                   )}
                 </div>
               </div>
-            )}
-
-            {/* Footnote / Context note */}
-            {item.note && (
-              <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                <span>{item.note}</span>
-                <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">
-                  {item.unit}
-                </span>
-              </div>
+            ) : (
+              <div className="pb-4"></div>
             )}
           </Card>
         );
