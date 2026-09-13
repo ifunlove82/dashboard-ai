@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Receipt,
+  Anchor,
   Boxes,
   Building2,
   Users,
@@ -36,6 +37,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/revenue",
     icon: Receipt,
     description: "Thuế XNK & Phí CSHT",
+  },
+  {
+    name: "Phí CSHT",
+    href: "/dashboard/infrastructure-fee",
+    icon: Anchor,
+    description: "Phí hạ tầng cảng biển",
   },
   {
     name: "Thông quan",
