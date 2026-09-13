@@ -6,6 +6,8 @@ import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { InfrastructureKPIs } from "@/components/dashboard/InfrastructureKPIs";
 import { InfrastructureChartsRow1 } from "@/components/dashboard/InfrastructureChartsRow1";
 import { InfrastructureCardsRow2 } from "@/components/dashboard/InfrastructureCardsRow2";
+import { InfrastructureTopLists } from "@/components/dashboard/InfrastructureTopLists";
+import { InfrastructureDeclarationsTable } from "@/components/dashboard/InfrastructureDeclarationsTable";
 import type {
   KpiItem,
   Last6PeriodsChartItem,
@@ -130,6 +132,26 @@ export default function InfrastructureFeePage() {
     router.push(query ? `${pathname}?${query}` : pathname);
   };
 
+  const handleEnterpriseDrill = (enterpriseId: string) => {
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    params.set("enterprise", enterpriseId);
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
+
+  const handleBackFromDeclarations = () => {
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    params.delete("enterprise");
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
+
+  const currentEnterpriseName = enterprise
+    ? data?.topEnterprises?.find((e) => e.id === enterprise || e.code === enterprise)?.name ||
+      data?.declarations?.[0]?.enterpriseName ||
+      `Doanh nghiệp ${enterprise}`
+    : undefined;
+
   if (loading && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[350px] gap-3">
@@ -147,31 +169,51 @@ export default function InfrastructureFeePage() {
       <GlobalFilterBar
         unit={unit}
         taxType={taxType}
-        enterprise={enterprise}
+        enterprise={currentEnterpriseName || enterprise}
         onResetFilter={resetFilter}
         onUnitChange={handleUnitChange}
       />
 
-      {/* 6-Card KPI Grid with Sparklines */}
-      <InfrastructureKPIs kpis={data?.kpis || []} />
-
-      {/* Main Charts (Row 1 - Xu hướng & Luồng) */}
-      {!enterprise && data?.charts && (
-        <InfrastructureChartsRow1
-          charts={data.charts}
-          onDrill={handleDrill}
-          selectedTaxType={taxType}
+      {/* Leaf-Node Drill-down view: When enterprise is selected, hide Grid, Row 1, Row 2, Top Lists */}
+      {enterprise ? (
+        <InfrastructureDeclarationsTable
+          declarations={data?.declarations || []}
+          onBack={handleBackFromDeclarations}
+          enterpriseName={currentEnterpriseName}
+          enterpriseCode={enterprise}
         />
-      )}
+      ) : (
+        <>
+          {/* 6-Card KPI Grid with Sparklines */}
+          <InfrastructureKPIs kpis={data?.kpis || []} />
 
-      {/* Secondary Cards (Row 2 - Hàng hóa & Cảng) */}
-      {!enterprise && data?.charts && (
-        <InfrastructureCardsRow2
-          charts={data.charts}
-          onDrill={handleCardDrill}
-          selectedCommodity={commodity}
-          selectedPort={unit}
-        />
+          {/* Main Charts (Row 1 - Xu hướng & Luồng) */}
+          {data?.charts && (
+            <InfrastructureChartsRow1
+              charts={data.charts}
+              onDrill={handleDrill}
+              selectedTaxType={taxType}
+            />
+          )}
+
+          {/* Secondary Cards (Row 2 - Hàng hóa & Cảng) */}
+          {data?.charts && (
+            <InfrastructureCardsRow2
+              charts={data.charts}
+              onDrill={handleCardDrill}
+              selectedCommodity={commodity}
+              selectedPort={unit}
+            />
+          )}
+
+          {/* Top Lists Table (Row 3 - TOP Doanh nghiệp & Loại hình) */}
+          {data?.topEnterprises && (
+            <InfrastructureTopLists
+              topEnterprises={data.topEnterprises}
+              onDrill={handleEnterpriseDrill}
+            />
+          )}
+        </>
       )}
     </div>
   );
