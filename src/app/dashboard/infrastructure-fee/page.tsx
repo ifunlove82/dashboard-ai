@@ -5,6 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { InfrastructureKPIs } from "@/components/dashboard/InfrastructureKPIs";
 import { InfrastructureChartsRow1 } from "@/components/dashboard/InfrastructureChartsRow1";
+import { InfrastructureCardsRow2 } from "@/components/dashboard/InfrastructureCardsRow2";
 import type {
   KpiItem,
   Last6PeriodsChartItem,
@@ -37,6 +38,7 @@ export default function InfrastructureFeePage() {
 
   const unit = searchParams ? searchParams.get("unit") : null;
   const taxType = searchParams ? searchParams.get("taxType") : null;
+  const commodity = searchParams ? searchParams.get("commodity") : null;
   const enterprise = searchParams ? searchParams.get("enterprise") : null;
 
   useEffect(() => {
@@ -63,11 +65,14 @@ export default function InfrastructureFeePage() {
     if (level === "all") {
       params.delete("unit");
       params.delete("taxType");
+      params.delete("commodity");
       params.delete("enterprise");
     } else if (level === "unit") {
       params.delete("taxType");
+      params.delete("commodity");
       params.delete("enterprise");
     } else if (level === "taxType") {
+      params.delete("commodity");
       params.delete("enterprise");
     }
     const query = params.toString();
@@ -82,6 +87,7 @@ export default function InfrastructureFeePage() {
       params.set("unit", selectedUnit);
     }
     params.delete("taxType");
+    params.delete("commodity");
     params.delete("enterprise");
     const query = params.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
@@ -93,6 +99,31 @@ export default function InfrastructureFeePage() {
       params.delete("taxType");
     } else {
       params.set("taxType", taxTypeValue);
+    }
+    params.delete("enterprise");
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
+
+  const handleCardDrill = (type: "commodity" | "port" | string, value: string) => {
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    if (type === "commodity") {
+      if (params.get("commodity") === value) {
+        params.delete("commodity");
+      } else {
+        params.set("commodity", value);
+      }
+    } else if (type === "port") {
+      let unitValue = value;
+      if (value.includes("TP.HCM")) unitValue = "HQ TP.HCM";
+      else if (value.includes("Hải Phòng")) unitValue = "HQ Hải Phòng";
+      else if (value.includes("Vũng Tàu") || value.includes("Cái Mép")) unitValue = "HQ Bà Rịa - Vũng Tàu";
+
+      if (params.get("unit") === unitValue) {
+        params.delete("unit");
+      } else {
+        params.set("unit", unitValue);
+      }
     }
     params.delete("enterprise");
     const query = params.toString();
@@ -130,6 +161,16 @@ export default function InfrastructureFeePage() {
           charts={data.charts}
           onDrill={handleDrill}
           selectedTaxType={taxType}
+        />
+      )}
+
+      {/* Secondary Cards (Row 2 - Hàng hóa & Cảng) */}
+      {!enterprise && data?.charts && (
+        <InfrastructureCardsRow2
+          charts={data.charts}
+          onDrill={handleCardDrill}
+          selectedCommodity={commodity}
+          selectedPort={unit}
         />
       )}
     </div>
