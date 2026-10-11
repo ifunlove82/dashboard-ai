@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Receipt,
   Anchor,
+  ArrowLeftRight,
   Boxes,
   Building2,
   Users,
@@ -43,6 +44,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/infrastructure-fee",
     icon: Anchor,
     description: "Phí hạ tầng cảng biển",
+  },
+  {
+    name: "Tờ khai – Kim ngạch",
+    href: "/dashboard/declarations-turnover",
+    icon: ArrowLeftRight,
+    description: "Cán cân thương mại & Tờ khai XNK",
   },
   {
     name: "Thông quan",
