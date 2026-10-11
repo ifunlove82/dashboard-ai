@@ -31,6 +31,8 @@ import type {
   DeclarationItem,
 } from "@/app/api/v1/declarations-turnover/route";
 import { formatNumber, formatUSD } from "@/context/DashboardContext";
+import { TradeBalanceHero } from "@/components/dashboard/TradeBalanceHero";
+import { DualKpiPanel } from "@/components/dashboard/DualKpiPanel";
 
 const UNIT_OPTIONS = [
   { value: "all", label: "Tất cả Cục Hải quan" },
@@ -282,177 +284,17 @@ function DeclarationsTurnoverContent() {
       )}
 
       {/* 3. Khung 1: Cán cân thương mại (TradeBalanceHero) */}
-      <section
-        id="section-trade-balance-hero"
-        aria-label="Cán cân thương mại"
-        className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs"
-      >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <Scale className="size-4 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              1. Cán cân thương mại XNK (Trade Balance Hero)
-            </h2>
-          </div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-            Task 3 Component
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="py-8 space-y-4 animate-pulse">
-            <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
-            <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
-            <div className="h-6 bg-slate-100 dark:bg-slate-800/60 rounded w-2/3" />
-          </div>
-        ) : data ? (
-          <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Cán cân thương mại ròng
-              </span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  ${formatNumber(Math.abs(data.tradeBalance.netBalanceMillionUSD))} Tr. USD
-                </span>
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${
-                    data.tradeBalance.isSurplus
-                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
-                      : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
-                  }`}
-                >
-                  {data.tradeBalance.isSurplus ? (
-                    <>
-                      <TrendingUp className="size-3" />
-                      XUẤT SIÊU
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown className="size-3" />
-                      NHẬP SIÊU
-                    </>
-                  )}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Biến động cùng kỳ: +{data.tradeBalance.yoyChangePct}% YoY
-              </p>
-            </div>
-
-            <div className="p-4 rounded-lg bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40">
-              <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">
-                Kim ngạch Xuất khẩu (XK)
-              </span>
-              <div className="text-2xl font-extrabold text-blue-900 dark:text-blue-100 mt-1">
-                ${formatNumber(data.tradeBalance.exportMillionUSD)} Tr. USD
-              </div>
-              <p className="text-[11px] text-blue-600/80 dark:text-blue-400 mt-1">
-                Tỷ trọng: {data.turnoverKpis.exportRatioPct}%
-              </p>
-            </div>
-
-            <div className="p-4 rounded-lg bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40">
-              <span className="text-xs text-purple-700 dark:text-purple-300 font-medium">
-                Kim ngạch Nhập khẩu (NK)
-              </span>
-              <div className="text-2xl font-extrabold text-purple-900 dark:text-purple-100 mt-1">
-                ${formatNumber(data.tradeBalance.importMillionUSD)} Tr. USD
-              </div>
-              <p className="text-[11px] text-purple-600/80 dark:text-purple-400 mt-1">
-                Tỷ trọng: {data.turnoverKpis.importRatioPct}%
-              </p>
-            </div>
-          </div>
-        ) : null}
+      <section id="section-trade-balance-hero" aria-label="Cán cân thương mại">
+        <TradeBalanceHero data={data?.tradeBalance} loading={loading} />
       </section>
 
       {/* 4. Khung 2: KPI song hành (DualKpiPanel) */}
-      <section
-        id="section-dual-kpi-panel"
-        aria-label="KPI song hành"
-        className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs"
-      >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <Layers className="size-4 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              2. Chỉ số song hành Tờ khai & Kim ngạch (Dual KPI Panel)
-            </h2>
-          </div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-            Task 3 Component
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-lg p-4 space-y-2">
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
-                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
-                <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/3" />
-              </div>
-            ))}
-          </div>
-        ) : data ? (
-          <div className="pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* TK Card 1 */}
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">
-                Tổng tờ khai kỳ này
-              </span>
-              <div className="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
-                {formatNumber(data.declarationKpis.total)} TK
-              </div>
-              <div className="text-[11px] text-slate-500 mt-1 flex justify-between">
-                <span>XK: {formatNumber(data.declarationKpis.exportCount)}</span>
-                <span>NK: {formatNumber(data.declarationKpis.importCount)}</span>
-              </div>
-            </div>
-
-            {/* TK Card 2 */}
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">
-                Lũy kế Tờ khai YTD
-              </span>
-              <div className="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
-                {formatNumber(data.declarationKpis.ytdTotal)} TK
-              </div>
-              <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
-                <span className="text-emerald-600 font-medium">Xanh: {data.declarationKpis.channels.green.pct}%</span>
-                <span className="text-amber-600 font-medium">Vàng: {data.declarationKpis.channels.yellow.pct}%</span>
-                <span className="text-rose-600 font-medium">Đỏ: {data.declarationKpis.channels.red.pct}%</span>
-              </div>
-            </div>
-
-            {/* KN Card 3 */}
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">
-                Tổng kim ngạch kỳ này
-              </span>
-              <div className="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
-                ${formatNumber(data.turnoverKpis.totalMillionUSD)} Tr. USD
-              </div>
-              <div className="text-[11px] text-slate-500 mt-1">
-                Tăng trưởng: +{data.turnoverKpis.yoyChangePct}% YoY
-              </div>
-            </div>
-
-            {/* KN Card 4 */}
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">
-                Kim ngạch BQ / Tờ khai
-              </span>
-              <div className="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
-                ${formatNumber(data.turnoverKpis.avgPerDeclarationUSD)} USD
-              </div>
-              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
-                Biến động: +{data.turnoverKpis.avgChangePct}% so với kỳ trước
-              </div>
-            </div>
-          </div>
-        ) : null}
+      <section id="section-dual-kpi-panel" aria-label="KPI song hành">
+        <DualKpiPanel
+          declarationKpis={data?.declarationKpis}
+          turnoverKpis={data?.turnoverKpis}
+          loading={loading}
+        />
       </section>
 
       {/* 5. Khung 3: 9 Biểu đồ trực quan (DeclarationsTurnoverCharts) */}
