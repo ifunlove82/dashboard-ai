@@ -15,18 +15,24 @@ export interface OverviewData {
   };
   declarations: {
     actual: number;
+    import: number;
+    export: number;
     diff_abs: number;
     yoy_change: number;
     sparkline: number[];
   };
   turnover: {
     actual: number;
+    import: number;
+    export: number;
     diff_abs: number;
     yoy_change: number;
     sparkline: number[];
   };
   goods: {
     weight: number;
+    import: number;
+    export: number;
     containers: number;
     yoy_change: number;
     sparkline: number[];
@@ -68,18 +74,24 @@ export async function GET(request: Request) {
     },
     declarations: {
       actual: 450000,
+      import: 200000,
+      export: 250000,
       diff_abs: 12500,
       yoy_change: 3.1,
       sparkline: [40, 42, 45, 43, 48, 47, 49, 50, 52, 51]
     },
     turnover: {
       actual: 12500000000, // USD
+      import: 7000000000,
+      export: 5500000000,
       diff_abs: 500000000,
       yoy_change: 8.4,
       sparkline: [1000, 1100, 1050, 1200, 1150, 1250, 1300, 1280, 1350, 1400]
     },
     goods: {
       weight: 15400000, // Tons
+      import: 8400000,
+      export: 7000000,
       containers: 85000,
       yoy_change: 4.2,
       sparkline: [1.2, 1.3, 1.25, 1.4, 1.35, 1.5, 1.6, 1.55, 1.65, 1.7]
