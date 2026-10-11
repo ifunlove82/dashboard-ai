@@ -33,6 +33,7 @@ import type {
 import { formatNumber, formatUSD } from "@/context/DashboardContext";
 import { TradeBalanceHero } from "@/components/dashboard/TradeBalanceHero";
 import { DualKpiPanel } from "@/components/dashboard/DualKpiPanel";
+import { DeclarationsTurnoverCharts } from "@/components/dashboard/DeclarationsTurnoverCharts";
 
 const UNIT_OPTIONS = [
   { value: "all", label: "Tất cả Cục Hải quan" },
@@ -133,6 +134,18 @@ function DeclarationsTurnoverContent() {
 
   const handleResetFilters = () => {
     router.push(pathname);
+  };
+
+  const handleChartFilter = (filterType: string, value: string) => {
+    updateFilter(filterType, value);
+  };
+
+  const activeFilters = {
+    unit: unit !== "all" ? unit : undefined,
+    flow: flow !== "all" ? flow : undefined,
+    channel: channel !== "all" ? channel : undefined,
+    commodity: commodity !== "all" ? commodity : undefined,
+    regime: regime !== "all" ? regime : undefined,
   };
 
   return (
@@ -251,6 +264,38 @@ function DeclarationsTurnoverContent() {
             </select>
           </div>
 
+          {/* Active Regime chip */}
+          {regime !== "all" && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/60 text-xs font-medium text-blue-700 dark:text-blue-300">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px]">Loại hình:</span>
+              <span className="font-bold">{regime}</span>
+              <button
+                type="button"
+                onClick={() => updateFilter("regime", "all")}
+                className="hover:text-rose-600 dark:hover:text-rose-400 ml-0.5 cursor-pointer font-bold"
+                title="Bỏ lọc loại hình"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {/* Active Commodity chip */}
+          {commodity !== "all" && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50/80 dark:bg-purple-950/60 text-xs font-medium text-purple-700 dark:text-purple-300">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px]">Nhóm hàng:</span>
+              <span className="font-bold">{commodity}</span>
+              <button
+                type="button"
+                onClick={() => updateFilter("commodity", "all")}
+                className="hover:text-rose-600 dark:hover:text-rose-400 ml-0.5 cursor-pointer font-bold"
+                title="Bỏ lọc nhóm hàng"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {/* Reset Filters button */}
           {hasActiveFilters && (
             <button
@@ -301,64 +346,34 @@ function DeclarationsTurnoverContent() {
       <section
         id="section-declarations-turnover-charts"
         aria-label="Ma trận 9 biểu đồ phân tích"
-        className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs"
+        className="space-y-3"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-2">
-            <BarChart3 className="size-4 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+            <BarChart3 className="size-4.5 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-sm md:text-base font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight">
               3. Ma trận 9 Biểu đồ trực quan (Declarations & Turnover Charts Matrix)
             </h2>
           </div>
-          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-            Task 4 Component
-          </span>
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium inline-flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                Biểu đồ tự động đồng bộ theo bộ lọc
+              </span>
+            )}
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+              Interactive 3x3 Matrix
+            </span>
+          </div>
         </div>
 
-        {/* 9 Chart Cards Grid */}
-        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[
-            { id: 1, name: "1. Tờ khai 6 kỳ gần nhất", desc: "BarChart cột ghép XK vs NK", dataCount: data?.charts.declarationsLast6Periods.length },
-            { id: 2, name: "2. Kim ngạch 6 kỳ gần nhất", desc: "Stacked BarChart XK vs NK (Triệu USD)", dataCount: data?.charts.turnoverLast6Periods.length },
-            { id: 3, name: "3. Cán cân XNK 6 kỳ gần nhất", desc: "Diverging BarChart Xuất siêu / Nhập siêu", dataCount: data?.charts.tradeBalanceLast6Periods.length },
-            { id: 4, name: "4. Cơ cấu Xuất khẩu vs Nhập khẩu", desc: "Donut Chart tỷ trọng kim ngạch", dataCount: data?.charts.importExportRatio.length },
-            { id: 5, name: "5. Cơ cấu theo Loại hình (Regime)", desc: "Horizontal BarChart A11, B11, E21...", dataCount: data?.charts.byRegime.length },
-            { id: 6, name: "6. Phân luồng Tờ khai", desc: "Donut Chart Luồng Xanh / Vàng / Đỏ", dataCount: data?.charts.channelDistribution.length },
-            { id: 7, name: "7. Phân bổ theo Chi cục Hải quan", desc: "BarChart so sánh các đơn vị", dataCount: data?.charts.byUnit.length },
-            { id: 8, name: "8. Theo Nhóm hàng chủ lực", desc: "Horizontal BarChart Top nhóm hàng", dataCount: data?.charts.byCommodity.length },
-            { id: 9, name: "9. Tương quan Tờ khai – Kim ngạch", desc: "Composed Chart (Bar số TK & Line kim ngạch)", dataCount: data?.charts.correlation.length },
-          ].map((chart) => (
-            <div
-              key={chart.id}
-              className="p-4 rounded-lg border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex flex-col justify-between min-h-[140px]"
-            >
-              <div>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {chart.name}
-                  </h3>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    Recharts
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  {chart.desc}
-                </p>
-              </div>
-
-              <div className="mt-4 pt-2 border-t border-slate-200/40 dark:border-slate-700/40 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">Trạng thái:</span>
-                {loading ? (
-                  <span className="text-blue-500 animate-pulse font-medium">Đang tải...</span>
-                ) : (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                    Sẵn sàng ({chart.dataCount || 0} điểm dữ liệu)
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <DeclarationsTurnoverCharts
+          charts={data?.charts}
+          onFilterChange={handleChartFilter}
+          activeFilters={activeFilters}
+          loading={loading}
+        />
       </section>
 
       {/* 6. Khung 4: Bảng tờ khai chi tiết (DeclarationsDetailTable) */}
