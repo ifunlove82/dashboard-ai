@@ -8,32 +8,17 @@ import {
   Building2,
   Filter,
   RotateCcw,
-  TrendingUp,
-  TrendingDown,
-  Scale,
   Layers,
   BarChart3,
-  Table as TableIcon,
   ChevronRight,
   AlertCircle,
   RefreshCw,
-  FileText,
-  DollarSign,
-  PieChart as PieChartIcon,
-  Activity,
-  CheckCircle2,
-  Clock,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
-import type {
-  DeclarationsTurnoverResponse,
-  DeclarationItem,
-} from "@/app/api/v1/declarations-turnover/route";
-import { formatNumber, formatUSD } from "@/context/DashboardContext";
+import type { DeclarationsTurnoverResponse } from "@/app/api/v1/declarations-turnover/route";
 import { TradeBalanceHero } from "@/components/dashboard/TradeBalanceHero";
 import { DualKpiPanel } from "@/components/dashboard/DualKpiPanel";
 import { DeclarationsTurnoverCharts } from "@/components/dashboard/DeclarationsTurnoverCharts";
+import { DeclarationsDetailTable } from "@/components/dashboard/DeclarationsDetailTable";
 
 const UNIT_OPTIONS = [
   { value: "all", label: "Tất cả Cục Hải quan" },
@@ -380,113 +365,13 @@ function DeclarationsTurnoverContent() {
       <section
         id="section-declarations-detail-table"
         aria-label="Bảng tờ khai chi tiết"
-        className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-2xs"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <TableIcon className="size-4 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              4. Bảng Tờ khai chi tiết & Kim ngạch (Declarations Detail Table)
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              {data ? `${data.declarations.length} tờ khai` : "0 tờ khai"}
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-              Task 5 Component
-            </span>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="py-8 space-y-3 animate-pulse">
-            <div className="h-8 bg-slate-100 dark:bg-slate-800 rounded" />
-            <div className="h-8 bg-slate-100 dark:bg-slate-800 rounded" />
-            <div className="h-8 bg-slate-100 dark:bg-slate-800 rounded" />
-          </div>
-        ) : data && data.declarations.length > 0 ? (
-          <div className="pt-4 overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
-                  <th className="py-2.5 px-3">Số Tờ Khai</th>
-                  <th className="py-2.5 px-3">Thời Gian</th>
-                  <th className="py-2.5 px-3">Doanh Nghiệp</th>
-                  <th className="py-2.5 px-3">Loại Hình</th>
-                  <th className="py-2.5 px-3">Phân Luồng</th>
-                  <th className="py-2.5 px-3">Chiều</th>
-                  <th className="py-2.5 px-3 text-right">Trị Giá (USD)</th>
-                  <th className="py-2.5 px-3">Trạng Thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {data.declarations.slice(0, 5).map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                    <td className="py-2 px-3 font-mono text-[11px] font-medium text-blue-600 dark:text-blue-400">
-                      {item.declarationNo}
-                    </td>
-                    <td className="py-2 px-3 text-slate-500 whitespace-nowrap text-[11px]">
-                      {item.date}
-                    </td>
-                    <td className="py-2 px-3 max-w-[220px] truncate" title={item.enterpriseName}>
-                      <span className="font-medium text-slate-800 dark:text-slate-200 block truncate">
-                        {item.enterpriseName}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {item.enterpriseCode}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 font-mono font-medium text-slate-700 dark:text-slate-300">
-                      {item.regimeCode}
-                    </td>
-                    <td className="py-2 px-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
-                          item.channel === "green"
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
-                            : item.channel === "yellow"
-                            ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"
-                            : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
-                        }`}
-                      >
-                        {item.channel === "green"
-                          ? "Luồng Xanh"
-                          : item.channel === "yellow"
-                          ? "Luồng Vàng"
-                          : "Luồng Đỏ"}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 font-medium">
-                      <span
-                        className={
-                          item.flow === "XK"
-                            ? "text-blue-600 dark:text-blue-400"
-                            : "text-purple-600 dark:text-purple-400"
-                        }
-                      >
-                        {item.flow}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 text-right font-mono font-semibold text-slate-900 dark:text-white">
-                      ${formatNumber(item.turnoverUSD)}
-                    </td>
-                    <td className="py-2 px-3 text-slate-600 dark:text-slate-400 text-[11px]">
-                      {item.status}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400 text-center">
-              Hiển thị 5 / {data.declarations.length} tờ khai gần nhất (Task 5 sẽ cung cấp bảng tương tác đầy đủ kèm phân trang và tìm kiếm)
-            </div>
-          </div>
-        ) : (
-          <div className="py-8 text-center text-xs text-slate-500">
-            Không tìm thấy tờ khai nào phù hợp với bộ lọc đã chọn.
-          </div>
-        )}
+        <DeclarationsDetailTable
+          declarations={data?.declarations}
+          activeFilters={activeFilters}
+          onResetFilters={handleResetFilters}
+          loading={loading}
+        />
       </section>
     </div>
   );
