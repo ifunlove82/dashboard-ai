@@ -6,11 +6,9 @@ import {
   Boxes,
   DollarSign,
   TrendingUp,
-  TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
   Layers,
-  Scale,
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from "recharts";
 import type {

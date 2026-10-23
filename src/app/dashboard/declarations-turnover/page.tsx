@@ -114,15 +114,24 @@ function DeclarationsTurnoverContent() {
       params.set(key, value);
     }
     const queryString = params.toString();
-    router.push(queryString ? `${pathname}?${queryString}` : pathname);
+    router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
   };
 
   const handleResetFilters = () => {
-    router.push(pathname);
+    router.push(pathname, { scroll: false });
   };
 
   const handleChartFilter = (filterType: string, value: string) => {
     updateFilter(filterType, value);
+    // Smooth scroll down to details table when filtering from a chart
+    if (value && value !== "all") {
+      setTimeout(() => {
+        const tableElement = document.getElementById("section-declarations-detail-table");
+        if (tableElement) {
+          tableElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
   };
 
   const activeFilters = {

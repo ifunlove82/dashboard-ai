@@ -172,18 +172,23 @@ export function OverviewFlashcards() {
               </>
             )}
 
-            {importVal !== undefined && exportVal !== undefined && (
-              <>
-                <div className="flex h-2 mb-2 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 w-full group relative">
-                  <div title={`Nhập khẩu: ${formatNumber(importVal)} ${actualUnit}`} style={{ width: `${(importVal / (importVal + exportVal)) * 100}%` }} className="bg-sky-500 hover:opacity-80 transition-opacity cursor-pointer"></div>
-                  <div title={`Xuất khẩu: ${formatNumber(exportVal)} ${actualUnit}`} style={{ width: `${(exportVal / (importVal + exportVal)) * 100}%` }} className="bg-amber-500 hover:opacity-80 transition-opacity cursor-pointer"></div>
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-4">
-                  <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-500 inline-block"></span> Nhập khẩu</span>
-                  <span className="flex items-center gap-1">Xuất khẩu <span className="size-2 rounded-full bg-amber-500 inline-block"></span></span>
-                </div>
-              </>
-            )}
+            {importVal !== undefined && exportVal !== undefined && (() => {
+              const totalFlow = importVal + exportVal;
+              const importPct = totalFlow > 0 ? (importVal / totalFlow) * 100 : 50;
+              const exportPct = totalFlow > 0 ? (exportVal / totalFlow) * 100 : 50;
+              return (
+                <>
+                  <div className="flex h-2 mb-2 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 w-full group relative">
+                    <div title={`Nhập khẩu: ${formatNumber(importVal)} ${actualUnit}`} style={{ width: `${importPct}%` }} className="bg-sky-500 hover:opacity-80 transition-opacity cursor-pointer"></div>
+                    <div title={`Xuất khẩu: ${formatNumber(exportVal)} ${actualUnit}`} style={{ width: `${exportPct}%` }} className="bg-amber-500 hover:opacity-80 transition-opacity cursor-pointer"></div>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-4">
+                    <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sky-500 inline-block"></span> Nhập khẩu</span>
+                    <span className="flex items-center gap-1">Xuất khẩu <span className="size-2 rounded-full bg-amber-500 inline-block"></span></span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Sparkline Section */}

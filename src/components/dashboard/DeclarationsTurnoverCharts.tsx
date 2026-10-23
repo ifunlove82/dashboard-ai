@@ -11,7 +11,6 @@ import {
   GitCompare,
   TrendingUp,
   X,
-  Filter,
 } from "lucide-react";
 import {
   ResponsiveContainer,
