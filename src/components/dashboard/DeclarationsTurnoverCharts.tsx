@@ -146,14 +146,14 @@ export function DeclarationsTurnoverCharts({
             <button
               type="button"
               onClick={() => onFilterChange?.("flow", "all")}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               title="Bỏ lọc chiều hàng"
             >
               <span>{activeFilters.flow}</span>
               <X className="size-2.5" />
             </button>
           ) : (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               T05 - T10
             </span>
           )}
@@ -204,7 +204,7 @@ export function DeclarationsTurnoverCharts({
               <Bar
                 dataKey="importCount"
                 name="importCount"
-                fill="#8b5cf6"
+                fill="#4f46e5"
                 radius={[3, 3, 0, 0]}
                 cursor="pointer"
                 opacity={activeFilters.flow === "XK" ? 0.35 : 1}
@@ -228,7 +228,7 @@ export function DeclarationsTurnoverCharts({
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
             <div className="flex items-center gap-1.5">
-              <Activity className="size-4 text-purple-600 dark:text-purple-400" />
+              <Activity className="size-4 text-indigo-600 dark:text-indigo-400" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">
                 2. Kim ngạch 6 kỳ gần nhất
               </h3>
@@ -237,7 +237,7 @@ export function DeclarationsTurnoverCharts({
               Giá trị XNK xếp chồng (Triệu USD, click để lọc)
             </p>
           </div>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
             Triệu USD
           </span>
         </div>
@@ -288,7 +288,7 @@ export function DeclarationsTurnoverCharts({
                 dataKey="importUSD"
                 name="importUSD"
                 stackId="turnover"
-                fill="#8b5cf6"
+                fill="#4f46e5"
                 radius={[3, 3, 0, 0]}
                 cursor="pointer"
                 opacity={activeFilters.flow === "XK" ? 0.35 : 1}
@@ -315,7 +315,7 @@ export function DeclarationsTurnoverCharts({
               Chênh lệch Xuất siêu (+) vs Nhập siêu (-) (Triệu USD)
             </p>
           </div>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
             Xuất siêu liên tục
           </span>
         </div>
@@ -391,13 +391,13 @@ export function DeclarationsTurnoverCharts({
             <button
               type="button"
               onClick={() => onFilterChange?.("flow", "all")}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <span>{activeFilters.flow}</span>
               <X className="size-2.5" />
             </button>
           ) : (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               Tỷ trọng %
             </span>
           )}
@@ -486,13 +486,13 @@ export function DeclarationsTurnoverCharts({
             <button
               type="button"
               onClick={() => onFilterChange?.("regime", "all")}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <span>{activeFilters.regime}</span>
               <X className="size-2.5" />
             </button>
           ) : (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               {charts.byRegime.length} loại hình
             </span>
           )}
@@ -574,13 +574,13 @@ export function DeclarationsTurnoverCharts({
             <button
               type="button"
               onClick={() => onFilterChange?.("channel", "all")}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <span>{activeFilters.channel}</span>
               <X className="size-2.5" />
             </button>
           ) : (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               3 Luồng HQ
             </span>
           )}
@@ -674,13 +674,13 @@ export function DeclarationsTurnoverCharts({
             <button
               type="button"
               onClick={() => onFilterChange?.("unit", "all")}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <span>{activeFilters.unit}</span>
               <X className="size-2.5" />
             </button>
           ) : (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               5 Đơn vị
             </span>
           )}
@@ -760,7 +760,7 @@ export function DeclarationsTurnoverCharts({
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
             <div className="flex items-center gap-1.5">
-              <Boxes className="size-4 text-violet-600 dark:text-violet-400" />
+              <Boxes className="size-4 text-sky-600 dark:text-sky-400" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">
                 8. Theo Nhóm hàng chủ lực
               </h3>
@@ -773,13 +773,13 @@ export function DeclarationsTurnoverCharts({
             <button
               type="button"
               onClick={() => onFilterChange?.("commodity", "all")}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 hover:bg-blue-200 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <span>{activeFilters.commodity}</span>
               <X className="size-2.5" />
             </button>
           ) : (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
               Top 8
             </span>
           )}
@@ -835,7 +835,7 @@ export function DeclarationsTurnoverCharts({
                   return (
                     <Cell
                       key={`commodity-${index}`}
-                      fill={isSelected ? "#2563eb" : "#8b5cf6"}
+                      fill={isSelected ? "#2563eb" : "#0284c7"}
                       opacity={isDimmed ? 0.35 : 1}
                     />
                   );
@@ -853,7 +853,7 @@ export function DeclarationsTurnoverCharts({
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
             <div className="flex items-center gap-1.5">
-              <GitCompare className="size-4 text-rose-600 dark:text-rose-400" />
+              <GitCompare className="size-4 text-indigo-600 dark:text-indigo-400" />
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">
                 9. Tương quan Tờ khai – Kim ngạch
               </h3>
@@ -862,7 +862,7 @@ export function DeclarationsTurnoverCharts({
               Cột: Số tờ khai (Nghìn TK) | Đường: Kim ngạch (Triệu USD)
             </p>
           </div>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
             2 Trục số liệu
           </span>
         </div>
@@ -904,7 +904,7 @@ export function DeclarationsTurnoverCharts({
                 orientation="right"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 9.5, fill: "#f43f5e" }}
+                tick={{ fontSize: 9.5, fill: "#4f46e5" }}
                 tickFormatter={(val) => `$${Math.round(val / 1000)}k`}
               />
               <Tooltip
@@ -942,9 +942,9 @@ export function DeclarationsTurnoverCharts({
                 type="monotone"
                 dataKey="turnoverUSD"
                 name="turnoverUSD"
-                stroke="#f43f5e"
+                stroke="#4f46e5"
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: "#f43f5e" }}
+                dot={{ r: 3, fill: "#4f46e5" }}
                 activeDot={{ r: 5 }}
               />
             </ComposedChart>

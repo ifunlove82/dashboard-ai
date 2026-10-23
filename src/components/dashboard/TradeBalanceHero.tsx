@@ -177,14 +177,14 @@ export function TradeBalanceHero({ data, loading = false }: TradeBalanceHeroProp
 
             {/* Nhập khẩu (NK) */}
             <div className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-[#8b5cf6] shrink-0 ring-2 ring-purple-500/20" />
+              <span className="size-2.5 rounded-full bg-[#4f46e5] shrink-0 ring-2 ring-indigo-500/20" />
               <span className="text-slate-600 dark:text-slate-300">
                 Nhập khẩu:{" "}
                 <strong className="font-bold text-slate-900 dark:text-white">
                   {formatViDecimal(importMillionUSD, 1)} Triệu USD
                 </strong>
               </span>
-              <span className="text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 rounded text-[11px] border border-purple-200/50 dark:border-purple-800/50">
+              <span className="text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded text-[11px] border border-indigo-200/50 dark:border-indigo-800/50">
                 ({formatViDecimal(importPct, 1)}%)
               </span>
             </div>
@@ -202,16 +202,16 @@ export function TradeBalanceHero({ data, loading = false }: TradeBalanceHeroProp
             >
               <div
                 style={{ width: `${exportPct}%` }}
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-l-full transition-all duration-500"
+                className="h-full bg-blue-600 rounded-l-full transition-all duration-500"
                 title={`Xuất khẩu: ${formatViDecimal(exportMillionUSD, 1)} Triệu USD (${formatViDecimal(exportPct, 1)}%)`}
               />
               <div
                 style={{ width: `${importPct}%` }}
-                className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-r-full transition-all duration-500"
+                className="h-full bg-indigo-600 rounded-r-full transition-all duration-500"
                 title={`Nhập khẩu: ${formatViDecimal(importMillionUSD, 1)} Triệu USD (${formatViDecimal(importPct, 1)}%)`}
               />
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-400 dark:text-slate-500 font-medium px-0.5">
+            <div className="flex justify-between items-center text-[11px] text-slate-500 dark:text-slate-400 font-medium px-0.5">
               <span>Xuất khẩu (XK)</span>
               <span>Tổng kim ngạch 2 chiều: {formatViDecimal(totalTurnover, 1)} Triệu USD</span>
               <span>Nhập khẩu (NK)</span>

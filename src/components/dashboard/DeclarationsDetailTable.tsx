@@ -212,7 +212,7 @@ export function DeclarationsDetailTable({
           <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
             {totalItems} / {declarations.length} tờ khai
           </span>
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+          <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
             Trang {validCurrentPage} / {totalPages}
           </span>
         </div>
@@ -236,7 +236,8 @@ export function DeclarationsDetailTable({
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                aria-label="Xóa tìm kiếm"
                 title="Xóa tìm kiếm"
               >
                 <X className="size-3.5" />
@@ -250,7 +251,7 @@ export function DeclarationsDetailTable({
             <button
               type="button"
               onClick={() => setSelectedChannel("all")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ${
                 selectedChannel === "all"
                   ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs"
                   : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700"
@@ -259,7 +260,7 @@ export function DeclarationsDetailTable({
               <Layers className="size-3.5" />
               <span>Tất cả</span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
                   selectedChannel === "all"
                     ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900"
                     : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
@@ -273,18 +274,18 @@ export function DeclarationsDetailTable({
             <button
               type="button"
               onClick={() => setSelectedChannel("green")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ${
                 selectedChannel === "green"
-                  ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-xs"
+                  ? "bg-emerald-600 text-white dark:bg-emerald-600 dark:text-white shadow-xs"
                   : "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60"
               }`}
             >
               <CheckCircle2 className="size-3.5" />
               <span>Luồng Xanh</span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
                   selectedChannel === "green"
-                    ? "bg-white/20 text-white dark:bg-slate-950/20 dark:text-slate-950"
+                    ? "bg-white/20 text-white"
                     : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300"
                 }`}
               >
@@ -296,18 +297,18 @@ export function DeclarationsDetailTable({
             <button
               type="button"
               onClick={() => setSelectedChannel("yellow")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ${
                 selectedChannel === "yellow"
-                  ? "bg-amber-500 text-white dark:bg-amber-400 dark:text-slate-950 shadow-xs"
+                  ? "bg-amber-600 text-white dark:bg-amber-600 dark:text-white shadow-xs"
                   : "bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60"
               }`}
             >
               <AlertTriangle className="size-3.5" />
               <span>Luồng Vàng</span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
                   selectedChannel === "yellow"
-                    ? "bg-white/20 text-white dark:bg-slate-950/20 dark:text-slate-950"
+                    ? "bg-white/20 text-white"
                     : "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300"
                 }`}
               >
@@ -319,18 +320,18 @@ export function DeclarationsDetailTable({
             <button
               type="button"
               onClick={() => setSelectedChannel("red")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 ${
                 selectedChannel === "red"
-                  ? "bg-rose-600 text-white dark:bg-rose-500 dark:text-slate-950 shadow-xs"
+                  ? "bg-rose-600 text-white dark:bg-rose-600 dark:text-white shadow-xs"
                   : "bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60"
               }`}
             >
               <AlertCircle className="size-3.5" />
               <span>Luồng Đỏ</span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
                   selectedChannel === "red"
-                    ? "bg-white/20 text-white dark:bg-slate-950/20 dark:text-slate-950"
+                    ? "bg-white/20 text-white"
                     : "bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-300"
                 }`}
               >
@@ -469,7 +470,7 @@ export function DeclarationsDetailTable({
                           {item.declarationNo}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 pl-5">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 pl-5">
                         {formatDateTimeVN(item.date)}
                       </div>
                     </td>
@@ -482,7 +483,7 @@ export function DeclarationsDetailTable({
                       >
                         {item.enterpriseName}
                       </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 flex items-center gap-1">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 flex items-center gap-1">
                         <Building2 className="size-3 text-slate-400 shrink-0" />
                         <span>MST: {item.enterpriseCode}</span>
                       </div>
@@ -491,16 +492,16 @@ export function DeclarationsDetailTable({
                     {/* Loại hình & Chiều */}
                     <td className="py-3 px-3 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+                        <span className="px-1.5 py-0.5 rounded text-[11px] font-mono font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
                           {item.regimeCode}
                         </span>
                         {item.flow === "XK" ? (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
                             <ArrowUpRight className="size-2.5" />
                             XK
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
                             <ArrowDownRight className="size-2.5" />
                             NK
                           </span>
@@ -633,7 +634,7 @@ export function DeclarationsDetailTable({
               type="button"
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={validCurrentPage <= 1}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/60 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-xs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/60 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Trang trước"
             >
               <ChevronLeft className="size-3.5" />
@@ -647,7 +648,7 @@ export function DeclarationsDetailTable({
                   key={p}
                   type="button"
                   onClick={() => setCurrentPage(p)}
-                  className={`size-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`size-8 sm:size-9 min-w-[32px] sm:min-w-[36px] flex items-center justify-center rounded-lg text-xs font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     p === validCurrentPage
                       ? "bg-blue-600 text-white shadow-xs"
                       : "bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
@@ -664,7 +665,7 @@ export function DeclarationsDetailTable({
               type="button"
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={validCurrentPage >= totalPages}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/60 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-xs"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/60 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Trang sau"
             >
               <span>Trang sau</span>

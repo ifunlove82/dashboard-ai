@@ -159,7 +159,7 @@ function DeclarationsTurnoverContent() {
         {hasActiveFilters && (
           <>
             <span className="text-slate-300 dark:text-slate-600">|</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
               Đang lọc theo bộ điều kiện
             </span>
           </>
@@ -356,7 +356,7 @@ function DeclarationsTurnoverContent() {
                 Biểu đồ tự động đồng bộ theo bộ lọc
               </span>
             )}
-            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+            <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
               Interactive 3x3 Matrix
             </span>
           </div>

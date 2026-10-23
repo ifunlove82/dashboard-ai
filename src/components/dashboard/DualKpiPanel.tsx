@@ -220,7 +220,7 @@ export function DualKpiPanel({
                 </div>
               </div>
 
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
                 YTD 2024
               </span>
             </div>
@@ -241,7 +241,7 @@ export function DualKpiPanel({
                 <span className="text-slate-600 dark:text-slate-400 font-medium">
                   Cơ cấu kiểm tra phân luồng:
                 </span>
-                <span className="text-slate-400 text-[10px]">VNACCS Live</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px]">VNACCS Live</span>
               </div>
 
               {/* Multi-segment bar */}
@@ -422,18 +422,18 @@ export function DualKpiPanel({
                 <strong className="font-bold text-slate-900 dark:text-white">
                   {formatViDecimal(turnoverKpis.exportMillionUSD, 1)} Tr. USD
                 </strong>
-                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-950/60 px-1 py-0.2 rounded border border-blue-200/40">
+                <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-200/40">
                   ({formatViDecimal(turnoverKpis.exportRatioPct, 1)}%)
                 </span>
               </div>
               <span className="text-slate-300 dark:text-slate-600 font-light">|</span>
               <div className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-purple-500 shrink-0" />
+                <span className="size-2 rounded-full bg-indigo-600 shrink-0" />
                 <span className="text-slate-600 dark:text-slate-400">NK:</span>
                 <strong className="font-bold text-slate-900 dark:text-white">
                   {formatViDecimal(turnoverKpis.importMillionUSD, 1)} Tr. USD
                 </strong>
-                <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-950/60 px-1 py-0.2 rounded border border-purple-200/40">
+                <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-200/40">
                   ({formatViDecimal(turnoverKpis.importRatioPct, 1)}%)
                 </span>
               </div>
@@ -450,7 +450,7 @@ export function DualKpiPanel({
         </div>
 
         {/* CARD 4: Lũy kế Kim ngạch (YTD) & Bình quân */}
-        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:border-purple-400/60 dark:hover:border-purple-600/60 transition-colors flex flex-col justify-between">
+        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs hover:border-indigo-400/60 dark:hover:border-indigo-600/60 transition-colors flex flex-col justify-between">
           <div>
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
@@ -468,7 +468,7 @@ export function DualKpiPanel({
                 </div>
               </div>
 
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
                 YTD 2024
               </span>
             </div>
@@ -505,7 +505,7 @@ export function DualKpiPanel({
             <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1">
               <span>Diễn biến kim ngạch 12 kỳ (Triệu USD)</span>
               {latestTurnoverSpark !== null && (
-                <span className="font-semibold text-purple-600 dark:text-purple-400">
+                <span className="font-semibold text-indigo-600 dark:text-indigo-400">
                   Kỳ 12: {formatViDecimal(latestTurnoverSpark, 1)} Tr. USD
                 </span>
               )}
@@ -520,8 +520,8 @@ export function DualKpiPanel({
                   >
                     <defs>
                       <linearGradient id="colorSparklineTurnover" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="period" hide />
