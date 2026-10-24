@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 __pycache__/
 *.pyc
+
+# temporary & internal scratch
+.superpowers/
+scratch/
+
